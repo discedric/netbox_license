@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "license_management"
+version = "0.1.0"
+authors = [
+  { name="Cedric Vaneessen", email="cedric.vaneessen@zabun.be" },
+]
+description = "Inventory License management in NetBox"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+keywords = ["netbox", "netbox-plugin", "License"]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["license_management*"]

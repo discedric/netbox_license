@@ -1,0 +1,14 @@
+README.md
+pyproject.toml
+license_management/__init__.py
+license_management/apps.py
+license_management/models.py
+license_management/plugin.py
+license_management/setup.py
+license_management/urls.py
+license_management/version.py
+license_management/views.py
+license_management.egg-info/PKG-INFO
+license_management.egg-info/SOURCES.txt
+license_management.egg-info/dependency_links.txt
+license_management.egg-info/top_level.txt
