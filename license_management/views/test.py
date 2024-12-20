@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from netbox.views import generic
+from ..models import SoftwareLicense
 
 __all__ = (
     'TestView'
@@ -7,5 +8,4 @@ __all__ = (
 
 
 class TestView(generic.ObjectView):
-        title = 'Testing',
-        description = 'This is a testing view with a description',
+        queryset = SoftwareLicense.objects.all()
