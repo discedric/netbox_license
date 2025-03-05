@@ -1,11 +1,12 @@
-from django.shortcuts import render
 from netbox.views import generic
-from ..models import SoftwareLicense
+from ..models import License, LicenseAssignment
 
-__all__ = (
-    'TestView'
-)
+__all__ = ('TestView', 'Test1View')
 
 
 class TestView(generic.ObjectView):
-        queryset = SoftwareLicense.objects.all()
+    queryset = License.objects.all()
+
+
+class Test1View(generic.ObjectView):
+    queryset = LicenseAssignment.objects.all()
