@@ -1,0 +1,28 @@
+{% extends 'generic/object_list.html' %}
+{% load helpers %}
+{% load render_table from django_tables2 %}
+
+{% block title %}Software Licenses{% endblock %}
+
+{% block content %}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Software Licenses</h3>
+        </div>
+        <div class="panel-body">
+            <a href="{% url 'plugins:license_management:license_add' %}" class="btn btn-sm btn-primary">
+                <i class="mdi mdi-plus"></i> Add License
+            </a>
+        </div>
+
+        <p class="text-muted">Debug: Licenses Found: {{ object_list|length }}</p>
+
+        {% if object_list %}
+            {% render_table table %}
+        {% else %}
+            <div class="alert alert-info" role="alert">
+                No licenses found.
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
