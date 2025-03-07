@@ -3,6 +3,7 @@ pyproject.toml
 license_management/__init__.py
 license_management/apps.py
 license_management/filtersets.py
+license_management/forms.py
 license_management/graphql.py
 license_management/jobs.py
 license_management/middleware.py
@@ -17,5 +18,12 @@ license_management.egg-info/PKG-INFO
 license_management.egg-info/SOURCES.txt
 license_management.egg-info/dependency_links.txt
 license_management.egg-info/top_level.txt
+license_management/migrations/0001_initial.py
+license_management/migrations/0002_remove_license_vendor_and_more.py
+license_management/migrations/__init__.py
 license_management/views/__init__.py
-license_management/views/test.py
+license_management/views/assignment_views.py
+license_management/views/license_assign_views.py
+license_management/views/license_bulk_views.py
+license_management/views/license_edit_views.py
+license_management/views/license_views.py

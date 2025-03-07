@@ -13,7 +13,7 @@ license_buttons = [
 # License menu item
 license_items = (
     PluginMenuItem(
-        link='plugins:license_management:license',
+        link='plugins:license_management:license_list',
         link_text='Licenses', 
         permissions=["license_management.view_license"],
         buttons=license_buttons

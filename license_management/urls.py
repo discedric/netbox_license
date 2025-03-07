@@ -1,20 +1,30 @@
 from django.urls import include, path
 from utilities.urls import get_model_urls
 
-from .views import license_views, license_edit_views, license_bulk_views, license_assign_views, assignment_views
-from .views.license_views import LicenseListView, LicenseDetailView, LicenseDeleteView
+from .views import (
+    license_views, license_edit_views, license_bulk_views,
+    license_assign_views, assignment_views
+)
+from .views.license_views import LicenseListView, LicenseDetailView, LicenseDeleteView, LicenseChangeLogView
 from .views.assignment_views import LicenseAssignmentListView, LicenseAssignmentDetailView
 from .views.license_assign_views import LicenseAssignView, LicenseReassignView
 from .views.license_bulk_views import LicenseBulkImportView, LicenseBulkEditView, LicenseBulkDeleteView
 
+
 urlpatterns = (
+
+    path('api/', include('license_management.api.urls')),
+
     # Licenses
-    path('licenses/', include(get_model_urls('license_management', 'license', detail=False))),
-    path('licenses/<int:pk>/', include(get_model_urls('license_management', 'license'))),
+    path('licenses/', LicenseListView.as_view(), name='license_list'),
+    path('licenses/add/', license_edit_views.LicenseEditView.as_view(), name='license_add'),
+    path('licenses/<int:pk>/', LicenseDetailView.as_view(), name='license'),
+    path('licenses/<int:pk>/changelog/', LicenseChangeLogView.as_view(), name='license_changelog'),  # <-- Added this line
 
     # License Assignments
-    path('assignments/', include(get_model_urls('license_management', 'licenseassignment', detail=False))),
-    path('assignments/<int:pk>/', include(get_model_urls('license_management', 'licenseassignment'))),
+    path('assignments/', LicenseAssignmentListView.as_view(), name='list_assignments'),
+    path('assignments/add/', assignment_views.LicenseAssignmentEditView.as_view(), name='assignment_add'),
+    path('assignments/<int:pk>/', LicenseAssignmentDetailView.as_view(), name='assignment_detail'),
     path('assignments/<int:pk>/edit/', assignment_views.LicenseAssignmentEditView.as_view(), name='assignment_edit'),
     path('assignments/<int:pk>/delete/', assignment_views.LicenseAssignmentDeleteView.as_view(), name='assignment_delete'),
 
