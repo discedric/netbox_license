@@ -2,6 +2,8 @@ from django.db import models
 from netbox.models import NetBoxModel  # NetBox base model
 from dcim.models import Manufacturer, Device  # Import NetBox Manufacturer & Device models
 from django.utils.timezone import now
+from django.urls import reverse
+
 
 class License(NetBoxModel):
     ASSIGNMENT_TYPE_CHOICES = [
@@ -14,13 +16,12 @@ class License(NetBoxModel):
     software_name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     manufacturer = models.ForeignKey(
-    Manufacturer,
-    on_delete=models.PROTECT,
-    related_name="licenses",
-    null=True, 
-    blank=True  
-)
-
+        Manufacturer,
+        on_delete=models.PROTECT,
+        related_name="licenses",
+        null=True, 
+        blank=True  
+    )
     purchase_date = models.DateField()
     expiry_date = models.DateField()
     max_assignments = models.IntegerField(default=1)
@@ -52,6 +53,9 @@ class License(NetBoxModel):
     def __str__(self):
         return f"{self.license_key} - {self.software_name} ({self.get_type_display()}, {self.max_assignments} {self.get_assignment_type_display()})"
 
+    def get_absolute_url(self):
+        return reverse("plugins:license_management:license_detail", args=[self.pk])  # Correct placement
+
 
 class LicenseAssignment(NetBoxModel):
     license = models.ForeignKey(
@@ -69,9 +73,14 @@ class LicenseAssignment(NetBoxModel):
         ],
         default='ASSIGNED',
     )
-    description = models.TextField(blank=True, null=True)
-    ticket_number = models.CharField(max_length=100, blank=True, null=True)
-    comment = models.TextField(blank=True, null=True)
+    
+    def clean(self):
+        if self.license.assignment_type == "DEVICES" and not self.device:
+            raise ValidationError("Device is required for device-based licenses.")
+        if self.license.assignment_type in ["CORES", "USERS"] and not self.assigned_quantity:
+            raise ValidationError("Quantity must be set for core/user-based licenses.")
 
     def __str__(self):
-        return f"{self.device.name} - {self.license.license_key} [{self.get_status_display()}] - {self.assigned_quantity} {self.license.get_assignment_type_display()}"
+        if self.license.assignment_type == "DEVICES":
+            return f"{self.device.name} - {self.license.license_key} [{self.get_status_display()}]"
+        return f"{self.license.license_key} [{self.get_status_display()}] - {self.assigned_quantity} {self.license.get_assignment_type_display()}"

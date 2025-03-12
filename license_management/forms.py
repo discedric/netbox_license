@@ -52,12 +52,20 @@ class LicenseBulkEditForm(forms.ModelForm):
 class LicenseAssignmentForm(forms.ModelForm):
     class Meta:
         model = LicenseAssignment
-        fields = [
-            "license",
-            "device",
-            "assigned_quantity",
-            "status",
-            "ticket_number",
-            "description",
-            "comment"
-        ]
+        fields = ["license", "device", "assigned_quantity", "status"]
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        license_instance = self.instance.license if self.instance.pk else None
+
+        if license_instance:
+            if license_instance.assignment_type == "DEVICES":
+                self.fields["device"].queryset = Device.objects.all()
+            else:
+                del self.fields["device"]
+
+            if license_instance.assignment_type in ["CORES", "USERS"]:
+                self.fields["assigned_quantity"].widget = forms.NumberInput(attrs={"min": 1})
+            else:
+                del self.fields["assigned_quantity"]

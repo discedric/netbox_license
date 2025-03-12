@@ -1,0 +1,106 @@
+{% extends 'generic/object.html' %}
+{% load helpers %}
+{% load humanize %}
+{% load plugins %}
+
+{% block title %}{{ object.software_name }} - {{ object.license_key }}{% endblock %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item">
+    <a href="{% url 'plugins:license_management:license_list' %}">Licenses</a>
+  </li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <!-- Left Section (License Details) -->
+    <div class="col-md-6">
+        <div class="card">
+            <h5 class="card-header">License Details</h5>
+            <table class="table table-hover attr-table">
+                <tr>
+                    <th scope="row">Software</th>
+                    <td>{{ object.software_name|placeholder }}</td>
+                </tr>
+                <tr>
+                    <th scope="row">License Key</th>
+                    <td class="font-monospace">{{ object.license_key|placeholder }}</td>
+                </tr>
+                <tr>
+                    <th scope="row">Manufacturer</th>
+                    <td>{{ object.manufacturer|linkify|placeholder }}</td>
+                </tr>
+                <tr>
+                    <th scope="row">Status</th>
+                    <td>{% badge object.get_status_display bg_color=object.get_status_color %}</td>
+                </tr>
+                <tr>
+                    <th scope="row">Type</th>
+                    <td>{{ object.get_type_display }}</td>
+                </tr>
+                <tr>
+                    <th scope="row">Assignment Type</th>
+                    <td>{{ object.get_assignment_type_display }}</td>
+                </tr>
+                <tr>
+                    <th scope="row">Max Assignments</th>
+                    <td>{{ object.max_assignments }}</td>
+                </tr>
+                <tr>
+                    <th scope="row">Expiration Date</th>
+                    <td>{{ object.expiry_date|date:"Y-m-d"|placeholder }}</td>
+                </tr>
+                <tr>
+                    <th scope="row">Purchase Date</th>
+                    <td>{{ object.purchase_date|date:"Y-m-d"|placeholder }}</td>
+                </tr>
+            </table>
+        </div>
+
+        {% include 'inc/panels/custom_fields.html' %}
+        {% plugin_left_page object %}
+    </div>
+
+    <!-- Right Section (Assignments) -->
+    <div class="col-md-6">
+        <div class="card">
+            <h5 class="card-header">Assigned Devices</h5>
+            <table class="table table-hover attr-table">
+                <thead>
+                    <tr>
+                        <th scope="row">Device</th>
+                        <th scope="row">Assigned On</th>
+                        <th scope="row">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for assignment in object.assignments.all %}
+                    <tr>
+                        <td>{{ assignment.device|linkify|placeholder }}</td>
+                        <td>{{ assignment.assigned_on|date:"Y-m-d"|placeholder }}</td>
+                        <td>{% badge assignment.get_status_display %}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="text-muted">No devices assigned to this license.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% include 'inc/panels/tags.html' %}
+        {% include 'inc/panels/comments.html' %}
+        {% plugin_right_page object %}
+    </div>
+</div>
+
+<!-- Full Width Section -->
+<div class="row mb-3">
+    <div class="col col-md-12">
+        {% plugin_full_width_page object %}
+    </div>
+</div>
+
+{% endblock %}

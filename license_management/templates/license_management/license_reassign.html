@@ -1,0 +1,19 @@
+{% extends 'generic/object_edit.html' %}
+{% load helpers %}
+
+{% block title %}Reassign License: {{ object.software_name }}{% endblock %}
+
+{% block form %}
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h3 class="panel-title">Reassign License</h3>
+    </div>
+    <div class="panel-body">
+      <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Reassign License</button>
+      </form>
+    </div>
+  </div>
+{% endblock %}

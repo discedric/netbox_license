@@ -1,10 +1,9 @@
 from netbox.views import generic
 from utilities.views import register_model_view
-from ..models import License
+from django.shortcuts import get_object_or_404
+from ..models import License, LicenseAssignment
 from .. import filtersets, tables
-from netbox.views.generic import ObjectChangeLogView
-from license_management.models import License
-from netbox.views.generic import ObjectView
+from netbox.views.generic import ObjectChangeLogView, ObjectView
 
 
 __all__ = (
@@ -13,10 +12,6 @@ __all__ = (
     'LicenseDetailView',
     'LicenseDeleteView',
 )
-
-class LicenseDetailView(ObjectView):
-    queryset = License.objects.all()
-    template_name = "generic/object.html"
     
 @register_model_view(License, 'changelog')
 class LicenseChangeLogView(ObjectChangeLogView):
@@ -24,9 +19,10 @@ class LicenseChangeLogView(ObjectChangeLogView):
     model = License
     template_name = "generic/object_changelog.html"
 
+
 @register_model_view(License)
 class LicenseView(generic.ObjectView):
-    """View for displaying a single License."""
+    """View for displaying a single License using NetBox's default template."""
     queryset = License.objects.all()
 
 
@@ -41,8 +37,16 @@ class LicenseListView(generic.ObjectListView):
 
 @register_model_view(License, 'detail')
 class LicenseDetailView(generic.ObjectView):
-    """View for displaying License details."""
-    queryset = License.objects.all()
+    """View for displaying License details along with assigned devices using NetBox's default template."""
+    queryset = License.objects.prefetch_related("assignments__device")
+
+    def get_extra_context(self, request, instance):
+        """Add assigned devices to the context for rendering in NetBox's default template."""
+        assigned_devices = instance.assignments.all()
+
+        return {
+            "assigned_devices": assigned_devices,
+        }
 
 
 @register_model_view(License, 'delete')
