@@ -6,23 +6,16 @@ class LicenseTable(NetBoxTable):
     """Table for displaying Licenses in NetBox with clickable links."""
 
     license_key = tables.LinkColumn(
-    "plugins:license_management:license_detail",  # Corrected name
-    args=[tables.A("pk")],
-    verbose_name="License Key"
-)
+        "plugins:license_management:license",
+        args=[tables.A('pk')],
+        verbose_name="License Key"
+    )
+    assigned_count = tables.Column(empty_values=())
 
-    software_name = tables.LinkColumn(
-    "plugins:license_management:license_detail",  # Ensure it links correctly
-    args=[tables.A("pk")],
-    verbose_name="Software Name"
-)
-
-    manufacturer = tables.Column(verbose_name="Manufacturer")
-    max_assignments = tables.Column(verbose_name="Max Assignments")
-    assignment_type = tables.Column(verbose_name="Assignment Type")
-    expiry_date = tables.DateColumn(verbose_name="Expiry Date", format="Y-m-d")
-    purchase_date = tables.DateColumn(verbose_name="Purchase Date", format="Y-m-d")
-    status = tables.Column(verbose_name="Status")
+    def render_assigned_count(self, record):
+        assigned = record.assignments.count()
+        max_assignments = record.max_assignments
+        return f"{assigned}/{max_assignments}"
 
     class Meta(NetBoxTable.Meta):
         model = License
@@ -30,7 +23,7 @@ class LicenseTable(NetBoxTable):
             "license_key",
             "software_name",
             "manufacturer",
-            "max_assignments",
+            "assigned_count",
             "assignment_type",
             "expiry_date",
             "purchase_date",
@@ -38,26 +31,18 @@ class LicenseTable(NetBoxTable):
         )
         default_columns = fields
 
-
 class LicenseAssignmentTable(NetBoxTable):
-    """Table for displaying License Assignments."""
-    
     license = tables.LinkColumn(
-        "plugins:license_management:license_detail",  # Corrected URL name
-        args=[tables.A("license.pk")],
+        "plugins:license_management:assignment_detail",  # This should match urls.py
+        args=[tables.A("pk")],
         verbose_name="License"
     )
-
-    device = tables.LinkColumn(
-        "dcim:device",
-        args=[tables.A("device.pk")],
-        verbose_name="Device"
-    )
-
+    device = tables.Column(verbose_name="Device")
     assigned_quantity = tables.Column(verbose_name="Assigned Quantity")
     assigned_on = tables.DateColumn(verbose_name="Assigned On")
     status = tables.Column(verbose_name="Status")
 
-    class Meta:
+    class Meta(NetBoxTable.Meta):
         model = LicenseAssignment
-        fields = ("license", "device", "assigned_quantity", "assigned_on", "status")
+        fields = ("pk", "license", "device", "assigned_quantity", "assigned_on", "status")
+        default_columns = ("license", "device", "assigned_quantity", "assigned_on", "status")

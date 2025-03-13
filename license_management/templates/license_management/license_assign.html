@@ -43,7 +43,11 @@
                     </div>
 
                     <div class="d-flex justify-content-between">
+                        {% if object and object.pk %}
                         <a href="{{ object.get_absolute_url }}" class="btn btn-secondary">Cancel</a>
+                        {% else %}
+                        <a href="{% url 'plugins:license_management:assignment_list' %}" class="btn btn-secondary">Cancel</a>
+                        {% endif %}
                         <button type="submit" class="btn btn-primary">Assign</button>
                     </div>
 
