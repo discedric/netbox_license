@@ -1,10 +1,11 @@
 from django.urls import include, path
 from utilities.urls import get_model_urls
-from . import views
 from .views.license_assignment_views import (
     LicenseAssignmentListView,
     LicenseAssignmentEditView,
     LicenseAssignmentView,
+    LicenseAssignmentDeleteView,
+    LicenseAssignmentChangeLogView
 )
 from .views.license_assign_views import LicenseAssignView
 from .views.license_reassign_views import LicenseReassignView
@@ -22,17 +23,13 @@ urlpatterns = [
         include(get_model_urls('license_management', 'license')),
     ),
 
-    # License Assignments
+    # License Assignments 
     path(
         'assignments/',
         LicenseAssignmentListView.as_view(),
-        name='list_assignments',
+        name='licenseassignment_list',
     ),
-    path(
-        'assignments/add/',
-        LicenseAssignmentEditView.as_view(),
-        name='assignment_add',
-    ),
+
     path(
         'assignments/<int:pk>/',
         LicenseAssignmentView.as_view(),
@@ -41,7 +38,22 @@ urlpatterns = [
     path(
         'assignments/<int:pk>/edit/',
         LicenseAssignmentEditView.as_view(),
-        name='assignment_edit',
+        name='licenseassignment_edit',
+    ),
+    path(
+        'assignments/<int:pk>/delete/',
+        LicenseAssignmentDeleteView.as_view(),
+        name='licenseassignment_delete',
+    ),
+    path(
+        'assignments/add/',
+        LicenseAssignmentEditView.as_view(),
+        name='licenseassignment_add',
+    ),
+    path(
+        'assignments/<int:pk>/changelog/',
+        LicenseAssignmentChangeLogView.as_view(),
+        name='licenseassignment_changelog',
     ),
 
     # Special License Assignment Views

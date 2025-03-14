@@ -1,106 +1,119 @@
 from django.db import models
-from netbox.models import NetBoxModel  # NetBox base model
-from dcim.models import Manufacturer, Device  # Import NetBox Manufacturer & Device models
+from netbox.models import NetBoxModel
+from dcim.models import Manufacturer, Device
 from django.utils.timezone import now
 from django.urls import reverse
 from django.core.exceptions import ValidationError
 
 class License(NetBoxModel):
-    """Represents a software license that can be assigned to devices, cores, or users."""
+    """Represents a software license that can be assigned to devices."""
 
     ASSIGNMENT_TYPE_CHOICES = [
-        ('DEVICES', 'Devices'),
-        ('CORES', 'CPU Cores'),
-        ('USERS', 'Users'),
+        ("SINGLE", "Single License (1 device)"),
+        ("VOLUME", "Volume License (multiple devices)"),
+        ("UNLIMITED", "Unlimited License"),
     ]
 
-    license_key = models.CharField(max_length=255, unique=True)
     software_name = models.CharField(max_length=255)
-    description = models.TextField(blank=True, null=True)
+    license_key = models.CharField(max_length=255, unique=True)
+    product_key = models.CharField(max_length=255, blank=True, null=True)
+    serial_number = models.CharField(max_length=255, blank=True, null=True)
+    description = models.CharField(max_length=255, blank=True, null=True)
     manufacturer = models.ForeignKey(
         Manufacturer,
         on_delete=models.PROTECT,
         related_name="licenses",
-        null=True, 
-        blank=True  
+        null=True,
+        blank=True
     )
     purchase_date = models.DateField()
     expiry_date = models.DateField()
-    max_assignments = models.IntegerField(default=1)
     assignment_type = models.CharField(
-        max_length=50, choices=ASSIGNMENT_TYPE_CHOICES, default='DEVICES'
+        max_length=20, choices=ASSIGNMENT_TYPE_CHOICES, default="SINGLE"
     )
-    type = models.CharField(
-        max_length=50,
-        choices=[
-            ('PERPETUAL', 'Perpetual'),
-            ('SUBSCRIPTION', 'Subscription'),
-            ('TRIAL', 'Trial'),
-            ('OPEN_SOURCE', 'Open Source'),
-            ('ENTERPRISE', 'Enterprise'),
-        ],
-        default='SUBSCRIPTION',
+    volume_limit = models.PositiveIntegerField(
+        null=True, blank=True,
+        help_text="Maximum number of assignments allowed. Required if volume license."
     )
-    status = models.CharField(
-        max_length=50,
-        choices=[
-            ('ACTIVE', 'Active'),
-            ('EXPIRED', 'Expired'),
-            ('REVOKED', 'Revoked'),
-        ],
-        default='ACTIVE',
+    parent_license = models.ForeignKey(
+        "self",
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name="sub_licenses",
+        help_text="Link to parent license for extensions."
     )
-    comment = models.TextField(blank=True, null=True)
+
+    def clean(self):
+        if self.assignment_type == "SINGLE":
+            self.volume_limit = 1
+        elif self.assignment_type == "UNLIMITED":
+            self.volume_limit = None
+        elif self.assignment_type == "VOLUME":
+            if not self.volume_limit or self.volume_limit < 2:
+                raise ValidationError("Volume licenses require a volume limit of at least 2.")
+
+    def current_usage(self):
+        """Returns the current total assigned volume for this license."""
+        assigned = self.assignments.aggregate(models.Sum('volume'))['volume__sum'] or 0
+        return assigned
+
+    def usage_display(self):
+        if self.assignment_type == "UNLIMITED":
+            return f"{self.current_usage()}/∞"
+        return f"{self.current_usage()}/{self.volume_limit}"
 
     def __str__(self):
-        return f"{self.license_key} - {self.software_name} ({self.get_type_display()}, {self.max_assignments} {self.get_assignment_type_display()})"
+        return f"{self.software_name} - {self.license_key} ({self.get_assignment_type_display()}, Usage: {self.usage_display()})"
 
     def get_absolute_url(self):
-        if self.pk:
-            return reverse("plugins:license_management:license_detail", args=[self.pk])
-        return "#"
+        return reverse("plugins:license_management:license_detail", args=[self.pk])
 
 
 class LicenseAssignment(NetBoxModel):
-    """Represents an assignment of a License to a Device (or other types of entities)."""
+    """Represents assignment of a license to a device."""
 
     license = models.ForeignKey(
         License, on_delete=models.CASCADE, related_name="assignments"
     )
-    assigned_quantity = models.IntegerField(default=1)
     device = models.ForeignKey(
-        Device,
-        on_delete=models.CASCADE,
-        related_name="license_assignments",
-        null=True,
-        blank=True
+        Device, on_delete=models.CASCADE, related_name="license_assignments",
+        null=False
     )
-    assigned_on = models.DateTimeField(default=now)
-    status = models.CharField(
-        max_length=50,
-        choices=[
-            ('ASSIGNED', 'Assigned'),
-            ('REVOKED', 'Revoked'),
-            ('EXPIRED', 'Expired'),
-        ],
-        default='ASSIGNED',
+    manufacturer = models.ForeignKey(
+        Manufacturer, on_delete=models.PROTECT, related_name="license_assignments", null=True, blank=True
     )
+    volume = models.PositiveIntegerField(
+        default=1,
+        help_text="Quantity of license allocated to this device. Applicable only to Volume licenses."
+    )
+    assigned_to = models.DateTimeField(default=now)
+    description = models.CharField(max_length=255, blank=True, null=True)
 
     def clean(self):
-        """Ensure assignments match the license type constraints."""
-        if self.license.assignment_type == "DEVICES":
-            if not self.device:
-                raise ValidationError("Device is required for device-based licenses.")
-        elif self.license.assignment_type in ["CORES", "USERS"]:
-            if self.assigned_quantity <= 0:
-                raise ValidationError("Assigned quantity must be greater than 0 for core/user-based licenses.")
+        # Validate license assignment constraints
+        license_type = self.license.assignment_type
 
-    def get_absolute_url(self):
-        """Ensure NetBox correctly resolves the assignment detail URL."""
-        return reverse("plugins:license_management:assignment_detail", args=[self.pk])
+        if license_type == "SINGLE":
+            self.volume = 1
+            existing_assignments = self.license.assignments.exclude(pk=self.pk).count()
+            if existing_assignments >= 1:
+                raise ValidationError("Single licenses can only be assigned to one device.")
+
+        elif license_type == "VOLUME":
+            if self.volume < 1:
+                raise ValidationError("Volume quantity must be at least 1.")
+            total_assigned_volume = (self.license.assignments.exclude(pk=self.pk)
+                                     .aggregate(models.Sum('volume'))['volume__sum'] or 0)
+            if total_assigned_volume + self.volume > self.license.volume_limit:
+                raise ValidationError(
+                    f"Exceeds volume limit ({self.license.volume_limit}). Currently assigned: {total_assigned_volume}."
+                )
+
+        elif license_type == "UNLIMITED":
+            self.volume = 1  # Default to 1 as quantity isn't restricted
 
     def __str__(self):
-        """Better string representation for admin panel & NetBox UI."""
-        if self.license.assignment_type == "DEVICES":
-            return f"{self.device.name} - {self.license.license_key} [{self.get_status_display()}]"
-        return f"{self.license.license_key} [{self.get_status_display()}] - {self.assigned_quantity} {self.license.get_assignment_type_display()}"
+        return f"{self.license.software_name} → {self.device.name} ({self.volume})"
+
+    def get_absolute_url(self):
+        return reverse("plugins:license_management:assignment_detail", args=[self.pk])

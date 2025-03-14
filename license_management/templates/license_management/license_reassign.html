@@ -1,19 +1,58 @@
 {% extends 'generic/object_edit.html' %}
 {% load helpers %}
 
-{% block title %}Reassign License: {{ object.software_name }}{% endblock %}
+{% block title %}Edit License Assignment: {{ object.license.software_name }}{% endblock %}
 
-{% block form %}
-  <div class="panel panel-default">
-    <div class="panel-heading">
-      <h3 class="panel-title">Reassign License</h3>
+{% block content %}
+<div class="card">
+    <h5 class="card-header">Edit License Assignment</h5>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label class="form-label">License</label>
+                <input type="text" class="form-control" value="{{ object.license.software_name }} ({{ object.license.license_key }})" disabled>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Assignment Type</label>
+                <input type="text" class="form-control" value="{{ object.license.get_assignment_type_display }}" disabled>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Device</label>
+                <select name="device" class="form-select">
+                    {% for device in devices %}
+                        <option value="{{ device.pk }}" {% if object.device == device %}selected{% endif %}>
+                            {{ device.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            {% if object.license.assignment_type == "VOLUME" %}
+            <div class="mb-3">
+                <label class="form-label">Volume</label>
+                <input type="number" name="volume" class="form-control" min="1" value="{{ object.volume }}" required>
+            </div>
+            {% else %}
+            <div class="mb-3">
+                <label class="form-label">Volume</label>
+                <input type="number" class="form-control" value="{{ object.volume }}" readonly>
+            </div>
+            {% endif %}
+
+            <div class="mb-3">
+                <label class="form-label">Description</label>
+                <textarea name="description" class="form-control">{{ object.description|default_if_none:'' }}</textarea>
+            </div>
+
+            <div class="d-flex justify-content-between">
+                <a href="{{ object.get_absolute_url }}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </form>
     </div>
-    <div class="panel-body">
-      <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">Reassign License</button>
-      </form>
-    </div>
-  </div>
+</div>
 {% endblock %}

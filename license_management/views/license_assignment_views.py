@@ -8,12 +8,14 @@ __all__ = (
     'LicenseAssignmentView',
     'LicenseAssignmentEditView',
     'LicenseAssignmentDeleteView',
+    'LicenseAssignmentChangeLogView'
 )
 
 @register_model_view(LicenseAssignment)
 class LicenseAssignmentView(generic.ObjectView):
     """View to display details of a license assignment."""
     queryset = LicenseAssignment.objects.prefetch_related("license", "device")
+    template_name = "license_management/license_assignment.html"
 
 
 @register_model_view(LicenseAssignment, "list", path="", detail=False)
@@ -36,4 +38,9 @@ class LicenseAssignmentEditView(generic.ObjectEditView):
 @register_model_view(LicenseAssignment, 'delete')
 class LicenseAssignmentDeleteView(generic.ObjectDeleteView):
     """View to delete a license assignment."""
+    queryset = LicenseAssignment.objects.all()
+
+@register_model_view(LicenseAssignment, "changelog")
+class LicenseAssignmentChangeLogView(generic.ObjectChangeLogView):
+    """View to show changelog for a LicenseAssignment."""
     queryset = LicenseAssignment.objects.all()

@@ -19,12 +19,12 @@ license_items = [
         buttons=license_buttons
     ),
     PluginMenuItem(
-        link='plugins:license_management:list_assignments',  
+        link='plugins:license_management:licenseassignment_list',  
         link_text='License Assignments',
         permissions=["license_management.view_license_assignment"],
         buttons=[
             PluginMenuButton(
-                link='plugins:license_management:assignment_add',
+                link='plugins:license_management:licenseassignment_add',
                 title='Add Assignment',
                 icon_class='mdi mdi-plus-thick',
                 permissions=["license_management.add_license_assignment"],
