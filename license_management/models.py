@@ -110,7 +110,7 @@ class LicenseAssignment(NetBoxModel):
                 )
 
         elif license_type == "UNLIMITED":
-            self.volume = 1  # Default to 1 as quantity isn't restricted
+            self.volume = 1 
 
     def __str__(self):
         return f"{self.license.software_name} → {self.device.name} ({self.volume})"

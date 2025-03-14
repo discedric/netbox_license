@@ -2,14 +2,22 @@ from netbox.views import generic
 from utilities.views import register_model_view
 from ..models import LicenseAssignment
 from .. import filtersets, tables, forms
+from netbox.views.generic import ObjectChangeLogView
 
 __all__ = (
     'LicenseAssignmentListView',
     'LicenseAssignmentView',
     'LicenseAssignmentEditView',
     'LicenseAssignmentDeleteView',
-    'LicenseAssignmentChangeLogView'
+    'LicenseAssignmentChangeLogView',
 )
+
+@register_model_view(LicenseAssignment, "changelog")
+class LicenseAssignmentChangeLogView(ObjectChangeLogView):
+    """View for displaying the changelog of a LicenseAssignment object"""
+    model = LicenseAssignment
+    template_name = "generic/object_changelog.html"
+
 
 @register_model_view(LicenseAssignment)
 class LicenseAssignmentView(generic.ObjectView):
@@ -40,7 +48,4 @@ class LicenseAssignmentDeleteView(generic.ObjectDeleteView):
     """View to delete a license assignment."""
     queryset = LicenseAssignment.objects.all()
 
-@register_model_view(LicenseAssignment, "changelog")
-class LicenseAssignmentChangeLogView(generic.ObjectChangeLogView):
-    """View to show changelog for a LicenseAssignment."""
-    queryset = LicenseAssignment.objects.all()
+
