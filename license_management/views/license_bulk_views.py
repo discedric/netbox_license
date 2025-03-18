@@ -14,7 +14,7 @@ class LicenseBulkImportView(generic.BulkImportView):
     """View for bulk importing licenses."""
     queryset = License.objects.all()
     model_form = forms.LicenseImportForm
-    template_name = "license_management/license_import.html"
+
 
 
 @register_model_view(License, 'bulk_edit', path='edit', detail=False)

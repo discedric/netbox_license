@@ -49,8 +49,10 @@ class License(NetBoxModel):
         elif self.assignment_type == "UNLIMITED":
             self.volume_limit = None
         elif self.assignment_type == "VOLUME":
-            if not self.volume_limit or self.volume_limit < 2:
-                raise ValidationError("Volume licenses require a volume limit of at least 2.")
+            if not self.volume_limit:
+                raise ValidationError("Volume licenses require a volume limit.")
+        elif self.volume_limit < 2:
+            raise ValidationError("Volume licenses require a volume limit of at least 2.")
 
     def current_usage(self):
         """Returns the current total assigned volume for this license."""

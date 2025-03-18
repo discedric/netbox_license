@@ -17,9 +17,13 @@ class LicenseTable(NetBoxTable):
 
     def render_assigned_count(self, record):
         assigned = record.assignments.aggregate(total=Sum('volume'))['total'] or 0
+
         if record.assignment_type == "UNLIMITED":
             return f"{assigned}/∞"
-        return f"{assigned}/{record.volume_limit}"
+        elif record.assignment_type == "VOLUME":
+            return f"{assigned}/{record.volume_limit or '∞'}"
+        return f"{assigned}/1" 
+
 
     class Meta(NetBoxTable.Meta):
         model = License

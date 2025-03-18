@@ -114,10 +114,11 @@ class LicenseForm(forms.ModelForm):
         elif assignment_type == "UNLIMITED":
             cleaned_data["volume_limit"] = None
         elif assignment_type == "VOLUME":
-            if not volume_limit or volume_limit < 2:
+            if volume_limit is None or volume_limit < 2:
                 self.add_error("volume_limit", "Volume licenses require a volume limit of at least 2.")
 
         return cleaned_data
+
 
 class LicenseImportForm(forms.ModelForm):
     """Form for importing Licenses in bulk."""
