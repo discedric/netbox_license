@@ -1,3 +1,4 @@
+from license_management.api.serializers.licenses import LicenseSerializer
 from netbox.views import generic
 from utilities.views import register_model_view
 from ..models import License
@@ -12,7 +13,6 @@ __all__=(
     'LicenseDeleteView',
 )
 
-@register_model_view(License, 'changelog')
 class LicenseChangeLogView(ObjectChangeLogView):
     """View for displaying the changelog of a License object"""
     model = License
@@ -22,6 +22,7 @@ class LicenseChangeLogView(ObjectChangeLogView):
 class LicenseView(generic.ObjectView):
     """View for displaying a single License"""
     queryset = License.objects.all()
+    serializer_class = LicenseSerializer
 
 @register_model_view(License, 'list', path='', detail=False)
 class LicenseListView(generic.ObjectListView):

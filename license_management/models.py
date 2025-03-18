@@ -14,7 +14,7 @@ class License(NetBoxModel):
         ("UNLIMITED", "Unlimited License"),
     ]
 
-    software_name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255)
     license_key = models.CharField(max_length=255, unique=True)
     product_key = models.CharField(max_length=255, blank=True, null=True)
     serial_number = models.CharField(max_length=255, blank=True, null=True)
@@ -63,7 +63,7 @@ class License(NetBoxModel):
         return f"{self.current_usage()}/{self.volume_limit}"
 
     def __str__(self):
-        return f"{self.software_name} - {self.license_key} ({self.get_assignment_type_display()}, Usage: {self.usage_display()})"
+        return f"{self.name} - {self.license_key} ({self.get_assignment_type_display()}, Usage: {self.usage_display()})"
 
     def get_absolute_url(self):
         return reverse("plugins:license_management:license_detail", args=[self.pk])
@@ -90,7 +90,14 @@ class LicenseAssignment(NetBoxModel):
     description = models.CharField(max_length=255, blank=True, null=True)
 
     def clean(self):
-        # Validate license assignment constraints
+        """Validate license assignment constraints and ensure manufacturer consistency."""
+    
+        if self.license and self.manufacturer and self.license.manufacturer != self.manufacturer:
+            raise ValidationError("Selected license does not belong to the chosen manufacturer.")
+
+        if self.license:
+            self.manufacturer = self.license.manufacturer
+
         license_type = self.license.assignment_type
 
         if license_type == "SINGLE":
@@ -103,7 +110,7 @@ class LicenseAssignment(NetBoxModel):
             if self.volume < 1:
                 raise ValidationError("Volume quantity must be at least 1.")
             total_assigned_volume = (self.license.assignments.exclude(pk=self.pk)
-                                     .aggregate(models.Sum('volume'))['volume__sum'] or 0)
+                                 .aggregate(models.Sum('volume'))['volume__sum'] or 0)
             if total_assigned_volume + self.volume > self.license.volume_limit:
                 raise ValidationError(
                     f"Exceeds volume limit ({self.license.volume_limit}). Currently assigned: {total_assigned_volume}."
@@ -113,7 +120,7 @@ class LicenseAssignment(NetBoxModel):
             self.volume = 1 
 
     def __str__(self):
-        return f"{self.license.software_name} → {self.device.name} ({self.volume})"
+        return f"{self.license.name} → {self.device.name} ({self.volume})"
 
     def get_absolute_url(self):
         return reverse("plugins:license_management:assignment_detail", args=[self.pk])

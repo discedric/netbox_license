@@ -7,8 +7,7 @@ from .views.license_assignment_views import (
     LicenseAssignmentDeleteView,
     LicenseAssignmentChangeLogView
 )
-from .views.license_assign_views import LicenseAssignView
-from .views.license_reassign_views import LicenseReassignView
+
 
 app_name = "license_management"
 
@@ -56,17 +55,6 @@ urlpatterns = [
         name='licenseassignment_changelog',
     ),
 
-    # Special License Assignment Views
-    path(
-        'licenses/<int:pk>/assign/',
-        LicenseAssignView.as_view(),
-        name='license_assign',
-    ),
-    path(
-        'licenses/<int:pk>/reassign/',
-        LicenseReassignView.as_view(),
-        name='license_reassign',
-    ),
 
     # API
     path("api/", include("license_management.api.urls")),

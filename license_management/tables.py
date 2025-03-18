@@ -24,9 +24,9 @@ class LicenseTable(NetBoxTable):
     class Meta(NetBoxTable.Meta):
         model = License
         fields = (
+            "name",
             "license_key",
             "product_key",
-            "software_name",
             "manufacturer",
             "description",
             "assigned_count",
@@ -45,6 +45,7 @@ class LicenseAssignmentTable(NetBoxTable):
         args=[tables.A("pk")],
         verbose_name="License"
     )
+    manufacturer = tables.Column(verbose_name="Manufacturer")
     device = tables.Column(verbose_name="Device")
     volume = tables.Column(verbose_name="Volume")
     assigned_to = tables.DateColumn(verbose_name="Assigned On")
@@ -52,5 +53,5 @@ class LicenseAssignmentTable(NetBoxTable):
 
     class Meta(NetBoxTable.Meta):
         model = LicenseAssignment
-        fields = ("license", "device", "volume", "assigned_to", "description")
+        fields = ("license", "manufacturer", "device", "volume", "assigned_to", "description")
         default_columns = fields

@@ -1,7 +1,6 @@
 {% extends 'generic/object.html' %}
 {% load helpers %}
-{% load humanize %}
-{% load plugins %}
+
 
 {% block title %}License Assignment{% endblock %}
 
@@ -21,8 +20,8 @@
       <h5 class="card-header">License Details</h5>
       <table class="table table-hover attr-table">
         <tr>
-          <th scope="row">Software Name</th>
-          <td>{{ object.license.software_name|placeholder }}</td>
+          <th scope="row">Name</th>
+          <td>{{ object.license.name|placeholder }}</td>
         </tr>
         <tr>
           <th scope="row">License Key</th>

@@ -27,7 +27,7 @@ class LicenseFilterSet(NetBoxModelFilterSet):
             "license_key",
             "product_key",
             "serial_number",
-            "software_name",
+            "name",
             "manufacturer",
             "assignment_type",
             "purchase_date",
@@ -37,7 +37,7 @@ class LicenseFilterSet(NetBoxModelFilterSet):
 
     def search(self, queryset, name, value):
         return queryset.filter(
-            software_name__icontains=value
+            name__icontains=value
         ) | queryset.filter(
             license_key__icontains=value
         ) | queryset.filter(

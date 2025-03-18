@@ -1,31 +1,107 @@
 from django import forms
 from .models import License, LicenseAssignment
 from dcim.models import Manufacturer, Device
+from utilities.forms.fields import DynamicModelChoiceField
 
+class LicenseFilterForm(forms.Form):
+    """Filter form for licenses in object selector"""
+
+    manufacturer = DynamicModelChoiceField(
+        queryset=Manufacturer.objects.all(),
+        required=False,
+        label="Manufacturer",
+        selector=True
+    )
+
+    name = forms.CharField(
+        required=False,
+        label="License Name"
+    )
+
+    def filter_queryset(self, queryset):
+        """Apply filters to the queryset based on form data"""
+        manufacturer = self.cleaned_data.get("manufacturer")
+        name = self.cleaned_data.get("name")
+
+        if manufacturer:
+            queryset = queryset.filter(manufacturer=manufacturer)
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+
+        return queryset
+    
 
 class LicenseForm(forms.ModelForm):
     """Form for adding/editing a software license"""
 
-    manufacturer = forms.ModelChoiceField(
+    manufacturer = DynamicModelChoiceField(
         queryset=Manufacturer.objects.all(),
         required=True,
         label="Manufacturer",
+        selector=True, 
+        quick_add=True  
+    )
+
+    parent_license = DynamicModelChoiceField(
+        queryset=License.objects.all(),
+        required=False,
+        label="Parent License",
+        help_text="Select a parent license if applicable.",
+        selector=True,
+        query_params={  
+            'manufacturer_id': '$manufacturer',  
+        }
+    )
+
+    license_key = forms.CharField(
+        required=True,
+        label="License Key"
+    )
+
+    name = forms.CharField(
+        required=True,
+        label="Name"
+    )
+
+    assignment_type = forms.ChoiceField(
+        choices=License.ASSIGNMENT_TYPE_CHOICES,
+        required=True,
+        label="Assignment Type"
+    )
+
+    purchase_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={"type": "date"}),
+        label="Purchase Date"
+    )
+
+    expiry_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={"type": "date"}),
+        label="Expiry Date"
+    )
+
+    comment = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 3}),
+        label="Comment"
     )
 
     class Meta:
         model = License
         fields = [
+            "manufacturer",  
             "license_key",
             "product_key",
+            "name",
             "serial_number",
-            "software_name",
             "description",
-            "manufacturer",
-            "purchase_date",
-            "expiry_date",
             "assignment_type",
             "volume_limit",
             "parent_license",
+            "purchase_date",
+            "expiry_date",
+            "comment"  
         ]
 
     def clean(self):
@@ -43,7 +119,6 @@ class LicenseForm(forms.ModelForm):
 
         return cleaned_data
 
-
 class LicenseImportForm(forms.ModelForm):
     """Form for importing Licenses in bulk."""
 
@@ -53,7 +128,7 @@ class LicenseImportForm(forms.ModelForm):
             "license_key",
             "product_key",
             "serial_number",
-            "software_name",
+            "name",
             "description",
             "manufacturer",
             "purchase_date",
@@ -70,7 +145,7 @@ class LicenseBulkEditForm(forms.ModelForm):
     class Meta:
         model = License
         fields = [
-            "software_name",
+            "name",
             "description",
             "manufacturer",
             "purchase_date",
@@ -81,61 +156,35 @@ class LicenseBulkEditForm(forms.ModelForm):
         ]
 
 
+
+
 class LicenseAssignmentForm(forms.ModelForm):
     """Form for assigning a License to a Device."""
 
+    manufacturer = DynamicModelChoiceField(
+        queryset=Manufacturer.objects.all(),
+        required=True,
+        label="Manufacturer",
+        selector=True, 
+        quick_add=True  
+    )
+
+    license = DynamicModelChoiceField(
+        queryset=License.objects.all(),
+        required=True,
+        label="License",
+        selector=True,
+        query_params={ 
+            'manufacturer_id': '$manufacturer',
+        }
+    )
+
+    device = DynamicModelChoiceField(
+        queryset=Device.objects.all(),
+        required=True,
+        label="Device"
+    )
+
     class Meta:
         model = LicenseAssignment
-        fields = ["license", "device", "volume", "description"]
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # Initially disable the volume field until a license is selected
-        self.fields["volume"].widget.attrs["disabled"] = True
-        self.fields["volume"].required = False
-
-        if "license" in self.data:
-            try:
-                license_id = int(self.data.get("license"))
-                license_instance = License.objects.get(pk=license_id)
-
-                if license_instance.assignment_type == "SINGLE":
-                    self.fields["volume"].initial = 1
-                    self.fields["volume"].widget.attrs["readonly"] = True
-                    self.fields["volume"].widget.attrs["disabled"] = False
-                    self.fields["volume"].required = True
-
-                elif license_instance.assignment_type == "VOLUME":
-                    self.fields["volume"].widget.attrs.update({"min": 1})
-                    self.fields["volume"].widget.attrs["disabled"] = False
-                    self.fields["volume"].required = True
-
-                elif license_instance.assignment_type == "UNLIMITED":
-                    self.fields["volume"].initial = 1
-                    self.fields["volume"].widget.attrs["readonly"] = True
-                    self.fields["volume"].widget.attrs["disabled"] = False
-                    self.fields["volume"].required = False
-
-            except (ValueError, License.DoesNotExist):
-                pass  # Invalid input; leave default behavior.
-
-        elif self.instance.pk and self.instance.license:
-            license_instance = self.instance.license
-            if license_instance.assignment_type == "SINGLE":
-                self.fields["volume"].initial = 1
-                self.fields["volume"].widget.attrs["readonly"] = True
-                self.fields["volume"].widget.attrs["disabled"] = False
-                self.fields["volume"].required = True
-            elif license_instance.assignment_type == "VOLUME":
-                self.fields["volume"].widget.attrs.update({"min": 1})
-                self.fields["volume"].widget.attrs["disabled"] = False
-                self.fields["volume"].required = True
-            elif license_instance.assignment_type == "UNLIMITED":
-                self.fields["volume"].initial = 1
-                self.fields["volume"].widget.attrs["readonly"] = True
-                self.fields["volume"].widget.attrs["disabled"] = False
-                self.fields["volume"].required = False
-
-        # Always populate device choices from existing devices
-        self.fields["device"].queryset = Device.objects.all()
+        fields = ["manufacturer", "license", "device", "volume", "description"]
