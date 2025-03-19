@@ -29,6 +29,43 @@ class LicenseFilterForm(forms.Form):
             queryset = queryset.filter(name__icontains=name)
 
         return queryset
+
+class LicenseImportForm(forms.ModelForm):
+    """Form for importing Licenses in bulk."""
+
+    class Meta:
+        model = License
+        fields = [
+            "license_key",
+            "product_key",
+            "serial_number",
+            "name",
+            "description",
+            "manufacturer",
+            "purchase_date",
+            "expiry_date",
+            "volume_type",
+            "volume_limit",
+            "parent_license",
+        ]
+
+
+class LicenseBulkEditForm(forms.ModelForm):
+    """Form for bulk editing Licenses."""
+
+    class Meta:
+        model = License
+        fields = [
+            "name",
+            "description",
+            "manufacturer",
+            "purchase_date",
+            "expiry_date",
+            "volume_type",
+            "volume_limit",
+            "parent_license",
+        ]
+
     
 
 class LicenseForm(forms.ModelForm):
@@ -63,10 +100,10 @@ class LicenseForm(forms.ModelForm):
         label="Name"
     )
 
-    assignment_type = forms.ChoiceField(
-        choices=License.ASSIGNMENT_TYPE_CHOICES,
+    volume_type = forms.ChoiceField(
+        choices=License.VOLUME_TYPE_CHOICES,
         required=True,
-        label="Assignment Type"
+        label="Volume Type"
     )
 
     purchase_date = forms.DateField(
@@ -96,7 +133,7 @@ class LicenseForm(forms.ModelForm):
             "name",
             "serial_number",
             "description",
-            "assignment_type",
+            "volume_type",
             "volume_limit",
             "parent_license",
             "purchase_date",
@@ -106,55 +143,20 @@ class LicenseForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        assignment_type = cleaned_data.get("assignment_type")
+        volume_type = cleaned_data.get("volume_type")
         volume_limit = cleaned_data.get("volume_limit")
 
-        if assignment_type == "SINGLE":
+        if volume_type == "SINGLE":
             cleaned_data["volume_limit"] = 1
-        elif assignment_type == "UNLIMITED":
+        elif volume_type == "UNLIMITED":
             cleaned_data["volume_limit"] = None
-        elif assignment_type == "VOLUME":
+        elif volume_type == "VOLUME":
             if volume_limit is None or volume_limit < 2:
                 self.add_error("volume_limit", "Volume licenses require a volume limit of at least 2.")
 
         return cleaned_data
 
 
-class LicenseImportForm(forms.ModelForm):
-    """Form for importing Licenses in bulk."""
-
-    class Meta:
-        model = License
-        fields = [
-            "license_key",
-            "product_key",
-            "serial_number",
-            "name",
-            "description",
-            "manufacturer",
-            "purchase_date",
-            "expiry_date",
-            "assignment_type",
-            "volume_limit",
-            "parent_license",
-        ]
-
-
-class LicenseBulkEditForm(forms.ModelForm):
-    """Form for bulk editing Licenses."""
-
-    class Meta:
-        model = License
-        fields = [
-            "name",
-            "description",
-            "manufacturer",
-            "purchase_date",
-            "expiry_date",
-            "assignment_type",
-            "volume_limit",
-            "parent_license",
-        ]
 
 
 
@@ -189,3 +191,31 @@ class LicenseAssignmentForm(forms.ModelForm):
     class Meta:
         model = LicenseAssignment
         fields = ["manufacturer", "license", "device", "volume", "description"]
+
+
+
+class LicenseAssignmentImportForm(forms.ModelForm):
+    """Form for bulk importing License Assignments."""
+
+    class Meta:
+        model = LicenseAssignment
+        fields = [
+            "manufacturer",
+            "license",
+            "device",
+            "volume",
+            "description",
+        ]
+
+
+class LicenseAssignmentBulkEditForm(forms.ModelForm):
+    """Form for bulk editing License Assignments."""
+
+    class Meta:
+        model = LicenseAssignment
+        fields = [
+            "license",
+            "device",
+            "volume",
+            "description",
+        ]

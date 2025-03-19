@@ -10,9 +10,9 @@ class LicenseFilterSet(NetBoxModelFilterSet):
     manufacturer = django_filters.ModelChoiceFilter(
         queryset=Manufacturer.objects.all(), label="Manufacturer"
     )
-    assignment_type = django_filters.ChoiceFilter(
-        choices=License.ASSIGNMENT_TYPE_CHOICES,
-        label="Assignment Type"
+    volume_type = django_filters.ChoiceFilter(
+        choices=License.VOLUME_TYPE_CHOICES,
+        label="Volume Type"
     )
     purchase_date = django_filters.DateFromToRangeFilter(label="Purchase Date (Between)")
     expiry_date = django_filters.DateFromToRangeFilter(label="Expiry Date (Between)")
@@ -29,7 +29,7 @@ class LicenseFilterSet(NetBoxModelFilterSet):
             "serial_number",
             "name",
             "manufacturer",
-            "assignment_type",
+            "volume_type",
             "purchase_date",
             "expiry_date",
             "parent_license",

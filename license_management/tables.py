@@ -3,27 +3,56 @@ import django_tables2 as tables
 from django.db.models import Sum
 from .models import License, LicenseAssignment
 
-
 class LicenseTable(NetBoxTable):
-    """Table displaying Licenses with clickable links and accurate volume usage."""
+    """Table displaying licenses with clickable fields."""
+
+    name = tables.LinkColumn(
+        "plugins:license_management:license_detail",
+        args=[tables.A('pk')],
+        verbose_name="License Name",
+        attrs={"a": {"class": "text-primary"}},
+    )
 
     license_key = tables.LinkColumn(
         "plugins:license_management:license_detail",
         args=[tables.A('pk')],
-        verbose_name="License Key"
+        verbose_name="License Key",
+        attrs={"a": {"class": "text-primary"}},
     )
+
     product_key = tables.Column(verbose_name="Product Key")
-    assigned_count = tables.Column(empty_values=(), verbose_name="Assigned Count")
+
+    manufacturer = tables.LinkColumn(
+        "dcim:manufacturer",
+        args=[tables.A("manufacturer.pk")],
+        verbose_name="Manufacturer",
+        empty_values=(),
+    )
+
+    parent_license = tables.TemplateColumn(
+        template_code="""
+        {% if record.parent_license %}
+            <a href="{% url 'plugins:license_management:license_detail' record.parent_license.pk %}">{{ record.parent_license.name }}</a>
+        {% else %}
+            -
+        {% endif %}
+        """,
+        verbose_name="Parent License",
+        orderable=False
+    )
+
+    assigned_count = tables.Column(empty_values=(), verbose_name="Assigned")
+    volume_type = tables.Column(accessor="volume_type", verbose_name="Volume Type")
 
     def render_assigned_count(self, record):
+        """Show assigned volume in relation to its type."""
         assigned = record.assignments.aggregate(total=Sum('volume'))['total'] or 0
 
-        if record.assignment_type == "UNLIMITED":
+        if record.volume_type == "UNLIMITED":
             return f"{assigned}/∞"
-        elif record.assignment_type == "VOLUME":
+        elif record.volume_type == "VOLUME":
             return f"{assigned}/{record.volume_limit or '∞'}"
-        return f"{assigned}/1" 
-
+        return f"{assigned}/1"
 
     class Meta(NetBoxTable.Meta):
         model = License
@@ -34,7 +63,8 @@ class LicenseTable(NetBoxTable):
             "manufacturer",
             "description",
             "assigned_count",
-            "assignment_type",
+            "volume_type",
+            "parent_license",
             "expiry_date",
             "purchase_date",
         )
@@ -42,20 +72,58 @@ class LicenseTable(NetBoxTable):
 
 
 class LicenseAssignmentTable(NetBoxTable):
-    """Table displaying License Assignments clearly and concisely."""
+    """Table displaying License Assignments with clickable fields."""
 
-    license = tables.LinkColumn(
-        "plugins:license_management:assignment_detail",
-        args=[tables.A("pk")],
-        verbose_name="License"
+    license_name = tables.TemplateColumn(
+        template_code="""
+        {% if record.license %}
+            <a href="{% url 'plugins:license_management:license_detail' record.license.pk %}">{{ record.license.name }}</a>
+        {% else %}
+            -
+        {% endif %}
+        """,
+        verbose_name="License Name",
+        orderable=False
     )
-    manufacturer = tables.Column(verbose_name="Manufacturer")
-    device = tables.Column(verbose_name="Device")
+
+    license_key = tables.TemplateColumn(
+        template_code="""
+        {% if record.license %}
+            <a href="{% url 'plugins:license_management:license_detail' record.license.pk %}">{{ record.license.license_key }}</a>
+        {% else %}
+            -
+        {% endif %}
+        """,
+        verbose_name="License Key",
+        orderable=False
+    )
+
+    manufacturer = tables.LinkColumn(
+        "dcim:manufacturer",
+        args=[tables.A("manufacturer.pk")],
+        verbose_name="Manufacturer",
+        empty_values=(),
+    )
+
+    device = tables.LinkColumn(
+        "dcim:device",
+        args=[tables.A("device.pk")],
+        verbose_name="Device"
+    )
+
     volume = tables.Column(verbose_name="Volume")
     assigned_to = tables.DateColumn(verbose_name="Assigned On")
     description = tables.Column(verbose_name="Description", empty_values=())
 
     class Meta(NetBoxTable.Meta):
         model = LicenseAssignment
-        fields = ("license", "manufacturer", "device", "volume", "assigned_to", "description")
+        fields = (
+            "license_name",
+            "license_key",
+            "device",
+            "manufacturer",
+            "volume",
+            "assigned_to",
+            "description"
+        )
         default_columns = fields

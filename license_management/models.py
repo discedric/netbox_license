@@ -1,14 +1,15 @@
 from django.db import models
 from netbox.models import NetBoxModel
+from netbox.models import PrimaryModel
 from dcim.models import Manufacturer, Device
 from django.utils.timezone import now
 from django.urls import reverse
 from django.core.exceptions import ValidationError
 
-class License(NetBoxModel):
+class License(PrimaryModel):
     """Represents a software license that can be assigned to devices."""
 
-    ASSIGNMENT_TYPE_CHOICES = [
+    VOLUME_TYPE_CHOICES = [
         ("SINGLE", "Single License (1 device)"),
         ("VOLUME", "Volume License (multiple devices)"),
         ("UNLIMITED", "Unlimited License"),
@@ -26,10 +27,10 @@ class License(NetBoxModel):
         null=True,
         blank=True
     )
-    purchase_date = models.DateField()
-    expiry_date = models.DateField()
-    assignment_type = models.CharField(
-        max_length=20, choices=ASSIGNMENT_TYPE_CHOICES, default="SINGLE"
+    purchase_date = models.DateField(null=True, blank=True)
+    expiry_date = models.DateField(null=True, blank=True)
+    volume_type = models.CharField(  
+        max_length=20, choices=VOLUME_TYPE_CHOICES, default="SINGLE"
     )
     volume_limit = models.PositiveIntegerField(
         null=True, blank=True,
@@ -44,15 +45,13 @@ class License(NetBoxModel):
     )
 
     def clean(self):
-        if self.assignment_type == "SINGLE":
+        if self.volume_type == "SINGLE":
             self.volume_limit = 1
-        elif self.assignment_type == "UNLIMITED":
+        elif self.volume_type == "UNLIMITED":
             self.volume_limit = None
-        elif self.assignment_type == "VOLUME":
-            if not self.volume_limit:
-                raise ValidationError("Volume licenses require a volume limit.")
-        elif self.volume_limit < 2:
-            raise ValidationError("Volume licenses require a volume limit of at least 2.")
+        elif self.volume_type == "VOLUME":
+            if not self.volume_limit or self.volume_limit < 2:
+                raise ValidationError("Volume licenses require a volume limit of at least 2.")
 
     def current_usage(self):
         """Returns the current total assigned volume for this license."""
@@ -60,18 +59,19 @@ class License(NetBoxModel):
         return assigned
 
     def usage_display(self):
-        if self.assignment_type == "UNLIMITED":
+        if self.volume_type == "UNLIMITED":
             return f"{self.current_usage()}/∞"
         return f"{self.current_usage()}/{self.volume_limit}"
 
     def __str__(self):
-        return f"{self.name} - {self.license_key} ({self.get_assignment_type_display()}, Usage: {self.usage_display()})"
+        return f"{self.name} - {self.license_key} ({self.get_volume_type_display()}, Usage: {self.usage_display()})"
 
     def get_absolute_url(self):
         return reverse("plugins:license_management:license_detail", args=[self.pk])
 
 
-class LicenseAssignment(NetBoxModel):
+
+class LicenseAssignment(PrimaryModel):
     """Represents assignment of a license to a device."""
 
     license = models.ForeignKey(
@@ -92,15 +92,13 @@ class LicenseAssignment(NetBoxModel):
     description = models.CharField(max_length=255, blank=True, null=True)
 
     def clean(self):
-        """Validate license assignment constraints and ensure manufacturer consistency."""
-    
         if self.license and self.manufacturer and self.license.manufacturer != self.manufacturer:
             raise ValidationError("Selected license does not belong to the chosen manufacturer.")
 
         if self.license:
             self.manufacturer = self.license.manufacturer
 
-        license_type = self.license.assignment_type
+        license_type = self.license.volume_type
 
         if license_type == "SINGLE":
             self.volume = 1
@@ -111,15 +109,17 @@ class LicenseAssignment(NetBoxModel):
         elif license_type == "VOLUME":
             if self.volume < 1:
                 raise ValidationError("Volume quantity must be at least 1.")
-            total_assigned_volume = (self.license.assignments.exclude(pk=self.pk)
-                                 .aggregate(models.Sum('volume'))['volume__sum'] or 0)
+            total_assigned_volume = (
+                self.license.assignments.exclude(pk=self.pk)
+                .aggregate(models.Sum('volume'))['volume__sum'] or 0
+            )
             if total_assigned_volume + self.volume > self.license.volume_limit:
                 raise ValidationError(
                     f"Exceeds volume limit ({self.license.volume_limit}). Currently assigned: {total_assigned_volume}."
                 )
 
         elif license_type == "UNLIMITED":
-            self.volume = 1 
+            pass
 
     def __str__(self):
         return f"{self.license.name} → {self.device.name} ({self.volume})"

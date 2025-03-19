@@ -41,13 +41,13 @@
           <td>{{ object.manufacturer|linkify|placeholder }}</td>
         </tr>
         <tr>
-          <th scope="row">Assignment Type</th>
-          <td>{{ object.get_assignment_type_display }}</td>
+          <th scope="row">Volume Type</th>
+          <td>{{ object.get_volume_type_display }}</td>
         </tr>
         <tr>
           <th scope="row">Volume Limit</th>
           <td>
-            {% if object.assignment_type == 'UNLIMITED' %}
+            {% if object.volume_type == 'UNLIMITED' %}
               Unlimited
             {% else %}
               {{ object.volume_limit }}

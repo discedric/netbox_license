@@ -1,5 +1,6 @@
 from netbox.plugins import PluginConfig
 from .version import __version__
+from .template_content import template_extensions
 
 class LicenseManagementConfig(PluginConfig):
         name = 'license_management'
@@ -15,5 +16,7 @@ class LicenseManagementConfig(PluginConfig):
             'used_additional_status_names': list(),
             'asset_warranty_expire_warning_days': 90,
     }
+
+template_extensions = template_extensions
 
 config = LicenseManagementConfig
