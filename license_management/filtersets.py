@@ -1,4 +1,5 @@
 import django_filters
+from django.db.models import Q
 from .models import License, LicenseAssignment
 from netbox.filtersets import NetBoxModelFilterSet
 from dcim.models import Manufacturer, Device
@@ -51,16 +52,31 @@ class LicenseAssignmentFilterSet(NetBoxModelFilterSet):
     """Filterset for License Assignments with added filtering fields."""
 
     q = django_filters.CharFilter(method="search", label="Search")
+
     license = django_filters.ModelChoiceFilter(
         queryset=License.objects.all(),
         label="License"
+    )
+    parent_license = django_filters.ModelChoiceFilter(
+        queryset=License.objects.filter(parent_license__isnull=False),
+        method="filter_parent_license",
+        label="Parent License"
     )
     device = django_filters.ModelChoiceFilter(
         queryset=Device.objects.all(),
         label="Device"
     )
+    manufacturer = django_filters.ModelChoiceFilter(
+        queryset=Manufacturer.objects.all(),
+        field_name="license__manufacturer",
+        label="Manufacturer"
+    )
     assigned_to = django_filters.DateFromToRangeFilter(
         label="Assigned Date (Between)"
+    )
+    volume = django_filters.NumberFilter(
+        field_name="volume",
+        label="Volume"
     )
 
     class Meta:
@@ -68,15 +84,26 @@ class LicenseAssignmentFilterSet(NetBoxModelFilterSet):
         fields = [
             "license",
             "device",
+            "manufacturer",
             "assigned_to",
             "volume",
         ]
 
     def search(self, queryset, name, value):
+        """Search in license name, license key, manufacturer name, and device name."""
         return queryset.filter(
-            license__software_name__icontains=value
-        ) | queryset.filter(
-            device__name__icontains=value
-        ) | queryset.filter(
-            license__license_key__icontains=value
+            Q(license__name__icontains=value) |
+            Q(license__license_key__icontains=value) |
+            Q(license__manufacturer__name__icontains=value) |
+            Q(device__name__icontains=value)
         )
+
+    def filter_parent_license(self, queryset, name, value):
+        """Filter the assignments to only include the selected parent license and its children."""
+        if value:
+            return queryset.filter(
+                Q(license=value) |
+                Q(license__parent_license=value)
+            )
+        return queryset
+

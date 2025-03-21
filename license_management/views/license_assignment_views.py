@@ -30,10 +30,11 @@ class LicenseAssignmentView(generic.ObjectView):
 
 @register_model_view(LicenseAssignment, "list", path="", detail=False)
 class LicenseAssignmentListView(generic.ObjectListView):
-    """View to list all assigned licenses."""
+    """View to list all assigned licenses with advanced filters."""
     queryset = LicenseAssignment.objects.prefetch_related("license", "device")
     table = tables.LicenseAssignmentTable
     filterset = filtersets.LicenseAssignmentFilterSet
+    filterset_form = forms.LicenseAssignmentFilterForm 
     action_buttons = ("add", "export")
 
 @register_model_view(LicenseAssignment, 'edit')

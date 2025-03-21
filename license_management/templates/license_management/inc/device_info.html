@@ -1,0 +1,29 @@
+{% load helpers %}
+
+<div class="card">
+  <h5 class="card-header">Assigned Licenses</h5>
+  {% if licenses %}
+    <table class="table table-hover attr-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for license_assignment in licenses %}
+          <tr>
+            <td>
+              <a href="{% url 'plugins:license_management:license' license_assignment.license.id %}">
+                {{ license_assignment.license.name }}
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="card-body">
+      <span class="text-muted">No licenses assigned</span>
+    </div>
+  {% endif %}
+</div>

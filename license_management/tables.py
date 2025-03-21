@@ -100,10 +100,12 @@ class LicenseAssignmentTable(NetBoxTable):
 
     manufacturer = tables.LinkColumn(
         "dcim:manufacturer",
-        args=[tables.A("manufacturer.pk")],
+        args=[tables.A("license.manufacturer.pk")],
         verbose_name="Manufacturer",
         empty_values=(),
     )
+
+
 
     device = tables.LinkColumn(
         "dcim:device",

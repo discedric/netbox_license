@@ -5,6 +5,7 @@ from dcim.models import Manufacturer, Device
 from django.utils.timezone import now
 from django.urls import reverse
 from django.core.exceptions import ValidationError
+from virtualization.models import VirtualMachine
 
 class License(PrimaryModel):
     """Represents a software license that can be assigned to devices."""
@@ -72,26 +73,36 @@ class License(PrimaryModel):
 
 
 class LicenseAssignment(PrimaryModel):
-    """Represents assignment of a license to a device."""
+    """Represents assignment of a license to a device OR a virtual machine."""
 
     license = models.ForeignKey(
-        License, on_delete=models.CASCADE, related_name="assignments"
+        "License", on_delete=models.CASCADE, related_name="assignments"
     )
     device = models.ForeignKey(
         Device, on_delete=models.CASCADE, related_name="license_assignments",
-        null=False
+        null=True, blank=True
+    )
+    virtual_machine = models.ForeignKey(
+        VirtualMachine, on_delete=models.CASCADE, related_name="license_assignments",
+        null=True, blank=True
     )
     manufacturer = models.ForeignKey(
         Manufacturer, on_delete=models.PROTECT, related_name="license_assignments", null=True, blank=True
     )
     volume = models.PositiveIntegerField(
         default=1,
-        help_text="Quantity of license allocated to this device. Applicable only to Volume licenses."
+        help_text="Quantity of license allocated. Only relevant for Volume Licenses."
     )
     assigned_to = models.DateTimeField(default=now)
     description = models.CharField(max_length=255, blank=True, null=True)
 
     def clean(self):
+        """Ensure a license is assigned to either a Device OR a Virtual Machine, but not both."""
+        if self.device and self.virtual_machine:
+            raise ValidationError("A license can only be assigned to either a Device or a Virtual Machine, not both.")
+        if not self.device and not self.virtual_machine:
+            raise ValidationError("You must assign the license to either a Device or a Virtual Machine.")
+
         if self.license and self.manufacturer and self.license.manufacturer != self.manufacturer:
             raise ValidationError("Selected license does not belong to the chosen manufacturer.")
 
@@ -104,7 +115,7 @@ class LicenseAssignment(PrimaryModel):
             self.volume = 1
             existing_assignments = self.license.assignments.exclude(pk=self.pk).count()
             if existing_assignments >= 1:
-                raise ValidationError("Single licenses can only be assigned to one device.")
+                raise ValidationError("Single licenses can only be assigned to one entity (Device or VM).")
 
         elif license_type == "VOLUME":
             if self.volume < 1:
@@ -122,7 +133,7 @@ class LicenseAssignment(PrimaryModel):
             pass
 
     def __str__(self):
-        return f"{self.license.name} → {self.device.name} ({self.volume})"
+        return f"{self.license.name} → {self.device or self.virtual_machine} ({self.volume})"
 
     def get_absolute_url(self):
         return reverse("plugins:license_management:assignment_detail", args=[self.pk])
