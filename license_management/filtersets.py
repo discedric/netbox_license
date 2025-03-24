@@ -10,17 +10,23 @@ class LicenseFilterSet(NetBoxModelFilterSet):
     """Filterset for Software Licenses with enhanced search capability."""
 
     q = django_filters.CharFilter(method="search", label="Search")
+
     manufacturer = django_filters.ModelChoiceFilter(
-        queryset=Manufacturer.objects.all(), label="Manufacturer"
+        queryset=Manufacturer.objects.all(),
+        field_name="manufacturer",
+        label="License Manufacturer"
     )
+
     volume_type = django_filters.ChoiceFilter(
         choices=License.VOLUME_TYPE_CHOICES,
         label="Volume Type"
     )
+
     purchase_date = django_filters.DateFromToRangeFilter(label="Purchase Date (Between)")
     expiry_date = django_filters.DateFromToRangeFilter(label="Expiry Date (Between)")
+
     parent_license = django_filters.ModelChoiceFilter(
-        queryset=License.objects.all(),
+        queryset=License.objects.filter(parent_license__isnull=True),
         label="Parent License"
     )
 
@@ -40,90 +46,57 @@ class LicenseFilterSet(NetBoxModelFilterSet):
 
     def search(self, queryset, name, value):
         return queryset.filter(
-            name__icontains=value
-        ) | queryset.filter(
-            license_key__icontains=value
-        ) | queryset.filter(
-            product_key__icontains=value
-        ) | queryset.filter(
-            serial_number__icontains=value
-        )
+            Q(name__icontains=value) |
+            Q(license_key__icontains=value) |
+            Q(product_key__icontains=value) |
+            Q(serial_number__icontains=value)
+        ).distinct()
 
 
 class LicenseAssignmentFilterSet(NetBoxModelFilterSet):
-    """Filterset for License Assignments with added filtering fields."""
-
+    """Filterset for License Assignments with comprehensive filtering."""
     q = django_filters.CharFilter(method="search", label="Search")
 
     license = django_filters.ModelChoiceFilter(
         queryset=License.objects.all(),
         label="License"
     )
-    parent_license = django_filters.ModelChoiceFilter(
-        queryset=License.objects.filter(parent_license__isnull=False),
-        method="filter_parent_license",
-        label="Parent License"
-    )
-    device = django_filters.ModelChoiceFilter(
-        queryset=Device.objects.all(),
-        label="Device"
-    )
+
+    device = django_filters.ModelChoiceFilter(queryset=Device.objects.all(), label="Device")
+    virtual_machine = django_filters.ModelChoiceFilter(queryset=VirtualMachine.objects.all(), label="Virtual Machine")
+
     manufacturer = django_filters.ModelChoiceFilter(
-        queryset=Manufacturer.objects.all(),
-        field_name="license__manufacturer",
-        label="Manufacturer"
-    )
-    assigned_to = django_filters.DateFromToRangeFilter(
-        label="Assigned Date (Between)"
-    )
-    volume = django_filters.NumberFilter(
-        field_name="volume",
-        label="Volume"
-    )
-    device_id = django_filters.ModelChoiceFilter(
-        field_name="device",
-        queryset=Device.objects.all(),
-        label="Device (ID)"
-    )
-
-    manufacturer_id = django_filters.ModelChoiceFilter(
         field_name="license__manufacturer",
         queryset=Manufacturer.objects.all(),
-        label="Manufacturer (ID)"
+        label="License Manufacturer"
     )
 
-    virtual_machine_id = django_filters.ModelChoiceFilter(
-        field_name="virtual_machine",
-        queryset=VirtualMachine.objects.all(),
-        label="Virtual Machine (ID)"
+    device_manufacturer = django_filters.ModelChoiceFilter(
+        field_name="device__device_type__manufacturer",
+        queryset=Manufacturer.objects.all(),
+        label="Device Manufacturer"
     )
 
+    assigned_to = django_filters.DateFromToRangeFilter(label="Assigned Date (Between)")
+    volume = django_filters.NumberFilter(label="Volume")
 
     class Meta:
         model = LicenseAssignment
         fields = [
             "license",
             "device",
+            "virtual_machine",
             "manufacturer",
+            "device_manufacturer",
             "assigned_to",
             "volume",
         ]
 
     def search(self, queryset, name, value):
-        """Search in license name, license key, manufacturer name, and device name."""
         return queryset.filter(
-            Q(license__name__icontains=value) |
-            Q(license__license_key__icontains=value) |
-            Q(license__manufacturer__name__icontains=value) |
-            Q(device__name__icontains=value)
-        )
-
-    def filter_parent_license(self, queryset, name, value):
-        """Filter the assignments to only include the selected parent license and its children."""
-        if value:
-            return queryset.filter(
-                Q(license=value) |
-                Q(license__parent_license=value)
-            )
-        return queryset
-
+            Q(license__name__icontains=value)
+            | Q(license__license_key__icontains=value)
+            | Q(license__manufacturer__name__icontains=value)
+            | Q(device__name__icontains=value)
+            | Q(virtual_machine__name__icontains=value)
+        ).distinct()

@@ -15,7 +15,6 @@
 
 {% block content %}
 <div class="row">
-  <!-- License Details -->
   <div class="col-md-6">
     <div class="card">
       <h5 class="card-header">License Details</h5>
@@ -37,7 +36,7 @@
           <td>{{ object.serial_number|placeholder }}</td>
         </tr>
         <tr>
-          <th scope="row">Manufacturer</th>
+          <th scope="row">License Manufacturer</th>
           <td>{{ object.manufacturer|linkify|placeholder }}</td>
         </tr>
         <tr>
@@ -80,7 +79,6 @@
     {% include 'inc/panels/custom_fields.html' %}
   </div>
 
-  <!-- Assigned Devices -->
   <div class="col-md-6">
     <div class="card">
       <h5 class="card-header">Assigned Devices ({{ object.usage_display }})</h5>
@@ -88,7 +86,7 @@
         <thead>
           <tr>
             <th>Device</th>
-            <th>Manufacturer</th>
+            <th>Device Manufacturer</th>
             <th>Assigned On</th>
             <th>Volume</th>
           </tr>
@@ -97,7 +95,7 @@
           {% for assignment in object.assignments.all %}
           <tr>
             <td>{{ assignment.device|linkify|placeholder }}</td>
-            <td>{{ assignment.manufacturer|linkify|placeholder }}</td>
+            <td>{{ assignment.device_manufacturer|linkify|placeholder }}</td>
             <td>{{ assignment.assigned_to|date:"Y-m-d" }}</td>
             <td>{{ assignment.volume }}</td>
           </tr>

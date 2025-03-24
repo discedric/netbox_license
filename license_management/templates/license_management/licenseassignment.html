@@ -1,7 +1,6 @@
 {% extends 'generic/object.html' %}
 {% load helpers %}
 
-
 {% block title %}License Assignment{% endblock %}
 
 {% block breadcrumbs %}
@@ -14,7 +13,6 @@
 
 {% block content %}
 <div class="row">
-  <!-- License Details -->
   <div class="col-md-6">
     <div class="card">
       <h5 class="card-header">License Details</h5>
@@ -36,7 +34,7 @@
           <td>{{ object.license.serial_number|placeholder }}</td>
         </tr>
         <tr>
-          <th scope="row">Manufacturer</th>
+          <th scope="row">License Manufacturer</th>
           <td>{{ object.license.manufacturer|linkify|placeholder }}</td>
         </tr>
         <tr>
@@ -69,8 +67,9 @@
           <td>{{ object.device|linkify|placeholder }}</td>
         </tr>
         <tr>
-          <th scope="row">Manufacturer</th>
-          <td>{{ object.device.manufacturer|linkify|placeholder }}</td>
+          <th scope="row">Device Manufacturer</th>
+          <td>{{ object.device.device_type.manufacturer|linkify|placeholder }}</td>
+          {# Alternatively: <td>{{ object.device_manufacturer|linkify|placeholder }}</td> #}
         </tr>
         <tr>
           <th scope="row">Assigned On</th>

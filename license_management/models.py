@@ -1,5 +1,4 @@
 from django.db import models
-from netbox.models import NetBoxModel
 from netbox.models import PrimaryModel
 from dcim.models import Manufacturer, Device
 from django.utils.timezone import now
@@ -55,7 +54,6 @@ class License(PrimaryModel):
                 raise ValidationError("Volume licenses require a volume limit of at least 2.")
 
     def current_usage(self):
-        """Returns the current total assigned volume for this license."""
         assigned = self.assignments.aggregate(models.Sum('volume'))['volume__sum'] or 0
         return assigned
 
@@ -69,7 +67,6 @@ class License(PrimaryModel):
 
     def get_absolute_url(self):
         return reverse("plugins:license_management:license_detail", args=[self.pk])
-
 
 
 class LicenseAssignment(PrimaryModel):
@@ -96,8 +93,15 @@ class LicenseAssignment(PrimaryModel):
     assigned_to = models.DateTimeField(default=now)
     description = models.CharField(max_length=255, blank=True, null=True)
 
+    device_manufacturer = models.ForeignKey(
+        Manufacturer,
+        on_delete=models.PROTECT,
+        related_name="device_license_assignments",
+        null=True,
+        blank=True
+    )
+
     def clean(self):
-        """Ensure a license is assigned to either a Device OR a Virtual Machine, but not both."""
         if self.device and self.virtual_machine:
             raise ValidationError("A license can only be assigned to either a Device or a Virtual Machine, not both.")
         if not self.device and not self.virtual_machine:
@@ -109,15 +113,17 @@ class LicenseAssignment(PrimaryModel):
         if self.license:
             self.manufacturer = self.license.manufacturer
 
-        license_type = self.license.volume_type
+        if self.device and not self.device_manufacturer:
+            self.device_manufacturer = self.device.device_type.manufacturer
 
-        if license_type == "SINGLE":
+        volume_type = self.license.volume_type
+        if volume_type == "SINGLE":
             self.volume = 1
             existing_assignments = self.license.assignments.exclude(pk=self.pk).count()
             if existing_assignments >= 1:
                 raise ValidationError("Single licenses can only be assigned to one entity (Device or VM).")
 
-        elif license_type == "VOLUME":
+        elif volume_type == "VOLUME":
             if self.volume < 1:
                 raise ValidationError("Volume quantity must be at least 1.")
             total_assigned_volume = (
@@ -128,9 +134,6 @@ class LicenseAssignment(PrimaryModel):
                 raise ValidationError(
                     f"Exceeds volume limit ({self.license.volume_limit}). Currently assigned: {total_assigned_volume}."
                 )
-
-        elif license_type == "UNLIMITED":
-            pass
 
     def __str__(self):
         return f"{self.license.name} → {self.device or self.virtual_machine} ({self.volume})"

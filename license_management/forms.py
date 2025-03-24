@@ -7,7 +7,6 @@ from .filtersets import LicenseAssignmentFilterSet, LicenseFilterSet
 from virtualization.models import VirtualMachine, Cluster
 from utilities.forms.rendering import FieldSet, TabbedGroups
 
-
 class LicenseFilterForm(NetBoxModelFilterSetForm):
     model = License
     filterset_class = LicenseFilterSet
@@ -15,7 +14,7 @@ class LicenseFilterForm(NetBoxModelFilterSetForm):
     manufacturer = DynamicModelChoiceField(
         queryset=Manufacturer.objects.all(),
         required=False,
-        label="Manufacturer",
+        label="License Manufacturer", 
         selector=True
     )
 
@@ -26,53 +25,34 @@ class LicenseFilterForm(NetBoxModelFilterSetForm):
         selector=True
     )
 
-class LicenseImportForm(forms.ModelForm):
-    """Form for importing Licenses in bulk."""
 
+class LicenseImportForm(forms.ModelForm):
     class Meta:
         model = License
         fields = [
-            "license_key",
-            "product_key",
-            "serial_number",
-            "name",
-            "description",
-            "manufacturer",
-            "purchase_date",
-            "expiry_date",
-            "volume_type",
-            "volume_limit",
-            "parent_license",
+            "license_key", "product_key", "serial_number", "name", "description",
+            "manufacturer", "purchase_date", "expiry_date",
+            "volume_type", "volume_limit", "parent_license",
         ]
 
 
 class LicenseBulkEditForm(forms.ModelForm):
-    """Form for bulk editing Licenses."""
-
     class Meta:
         model = License
         fields = [
-            "name",
-            "description",
-            "manufacturer",
-            "purchase_date",
-            "expiry_date",
-            "volume_type",
-            "volume_limit",
-            "parent_license",
+            "name", "description", "manufacturer", "purchase_date",
+            "expiry_date", "volume_type", "volume_limit", "parent_license",
         ]
 
-    
 
-class LicenseForm(forms.ModelForm):
-    """Form for adding/editing a software license"""
+class LicenseForm(NetBoxModelForm):
 
     manufacturer = DynamicModelChoiceField(
         queryset=Manufacturer.objects.all(),
         required=True,
-        label="Manufacturer",
-        selector=True, 
-        quick_add=True  
+        label="License Manufacturer",
+        selector=True,
+        quick_add=True
     )
 
     parent_license = DynamicModelChoiceField(
@@ -81,9 +61,7 @@ class LicenseForm(forms.ModelForm):
         label="Parent License",
         help_text="Select a parent license if applicable.",
         selector=True,
-        query_params={  
-            'manufacturer_id': '$manufacturer',  
-        }
+        query_params={'manufacturer_id': '$manufacturer'}
     )
 
     license_key = forms.CharField(
@@ -123,46 +101,42 @@ class LicenseForm(forms.ModelForm):
     class Meta:
         model = License
         fields = [
-            "manufacturer",
-            "name",
-            "license_key",
-            "product_key",
-            "serial_number",
-            "description",
-            "volume_type",
-            "volume_limit",
-            "parent_license",
-            "purchase_date",
-            "expiry_date",
-            "comment"  
+            "manufacturer", "name", "license_key", "product_key", "serial_number", "description",
+            "volume_type", "volume_limit", "parent_license", "purchase_date", "expiry_date", "comment"
         ]
 
-    def clean(self):
-        cleaned_data = super().clean()
-        volume_type = cleaned_data.get("volume_type")
-        volume_limit = cleaned_data.get("volume_limit")
+        def clean(self):
+            cleaned_data = super().clean()
 
-        if volume_type == "SINGLE":
-            cleaned_data["volume_limit"] = 1
-        elif volume_type == "UNLIMITED":
-            cleaned_data["volume_limit"] = None
-        elif volume_type == "VOLUME":
-            if volume_limit is None or volume_limit < 2:
-                self.add_error("volume_limit", "Volume licenses require a volume limit of at least 2.")
+            if not cleaned_data:
+                return cleaned_data
 
-        return cleaned_data
+            volume_type = cleaned_data.get("volume_type")
+            volume_limit = cleaned_data.get("volume_limit")
+
+            if volume_type == "SINGLE":
+                cleaned_data["volume_limit"] = 1
+            elif volume_type == "UNLIMITED":
+                cleaned_data["volume_limit"] = None
+            elif volume_type == "VOLUME":
+                if volume_limit is None or volume_limit < 2:
+                    self.add_error("volume_limit", "Volume licenses require a volume limit of at least 2.")
+
+            return cleaned_data
+
+
 
 class LicenseAssignmentForm(NetBoxModelForm):
     manufacturer = DynamicModelChoiceField(
         queryset=Manufacturer.objects.all(),
         required=True,
-        label="Manufacturer",
+        label="License Manufacturer",
         selector=True,
         quick_add=True
     )
 
     license = DynamicModelChoiceField(
-        queryset=License.objects.none(),  # Will be set in __init__
+        queryset=License.objects.none(),
         required=True,
         label="License",
         selector=True,
@@ -178,11 +152,11 @@ class LicenseAssignmentForm(NetBoxModelForm):
     )
 
     device = DynamicModelChoiceField(
-        queryset=Device.objects.none(),  # Will be set in __init__
+        queryset=Device.objects.none(),
         required=False,
         label="Device",
         selector=True,
-        query_params={"manufacturer_id": "$device_manufacturer"}
+        query_params={"device_type__manufacturer_id": "$device_manufacturer"}
     )
 
     cluster = DynamicModelChoiceField(
@@ -194,9 +168,10 @@ class LicenseAssignmentForm(NetBoxModelForm):
     )
 
     virtual_machine = DynamicModelChoiceField(
-        queryset=VirtualMachine.objects.all(),
+        queryset=VirtualMachine.objects.none(),
         required=False,
         label="Virtual Machine",
+        selector=True,
         query_params={'cluster_id': '$cluster'}
     )
 
@@ -235,11 +210,13 @@ class LicenseAssignmentForm(NetBoxModelForm):
             self.fields["license"].queryset = License.objects.filter(manufacturer_id=license_manufacturer_id)
 
         device_manufacturer_id = self._get_device_manufacturer_id()
+        self.fields["device"].widget.add_query_param("device_type__manufacturer_id", device_manufacturer_id or "")
         if device_manufacturer_id:
-            self.fields["device"].queryset = Device.objects.filter(device_type__manufacturer_id=device_manufacturer_id)
-            self.fields["device"].widget.add_query_param("device_type__manufacturer_id", device_manufacturer_id)
+            self.fields["device"].queryset = Device.objects.filter(
+        device_type__manufacturer_id=device_manufacturer_id
+        )
         else:
-            self.fields["device"].queryset = Device.objects.none()
+            self.fields["device"].queryset = Device.objects.all()
 
     def _get_value(self, field_name):
         """Helper to get a field value from data, initial, or instance"""
@@ -262,10 +239,8 @@ class LicenseAssignmentForm(NetBoxModelForm):
         return None
 
     def clean(self):
-        cleaned_data = super().clean()
-        if not isinstance(cleaned_data, dict):
-            cleaned_data = self.cleaned_data
-
+        super().clean()
+        cleaned_data = self.cleaned_data
 
         device = cleaned_data.get("device")
         virtual_machine = cleaned_data.get("virtual_machine")
@@ -280,41 +255,33 @@ class LicenseAssignmentForm(NetBoxModelForm):
 
 
 
-class LicenseAssignmentImportForm(forms.ModelForm):
-    """Form for bulk importing License Assignments."""
 
+class LicenseAssignmentImportForm(forms.ModelForm):
     class Meta:
         model = LicenseAssignment
-        fields = [
-            "manufacturer",
-            "license",
-            "device",
-            "volume",
-            "description",
-        ]
+        fields = ["manufacturer", "license", "device", "volume", "description"]
 
 
 class LicenseAssignmentBulkEditForm(forms.ModelForm):
-    """Form for bulk editing License Assignments."""
-
     class Meta:
         model = LicenseAssignment
-        fields = [
-            "license",
-            "device",
-            "volume",
-            "description",
-        ]
+        fields = ["license", "device", "volume", "description"]
+
 
 class LicenseAssignmentFilterForm(NetBoxModelFilterSetForm):
-    """Filter form for License Assignments with advanced searching."""
-    
-    model = LicenseAssignment 
+    model = LicenseAssignment
+    filterset_class = LicenseAssignmentFilterSet
 
     manufacturer = DynamicModelChoiceField(
         queryset=Manufacturer.objects.all(),
         required=False,
-        label="Manufacturer",
+        label="License Manufacturer",
+        selector=True
+    )
+    device_manufacturer = DynamicModelChoiceField(
+        queryset=Manufacturer.objects.all(),
+        required=False,
+        label="Device Manufacturer",
         selector=True
     )
 
@@ -324,7 +291,6 @@ class LicenseAssignmentFilterForm(NetBoxModelFilterSetForm):
         label="Device",
         selector=True
     )
-
     license = DynamicModelChoiceField(
         queryset=License.objects.all(),
         required=False,
@@ -332,22 +298,9 @@ class LicenseAssignmentFilterForm(NetBoxModelFilterSetForm):
         selector=True
     )
 
-    parent_license = DynamicModelChoiceField(
-        queryset=License.objects.all(),
-        required=False,
-        label="Parent License",
-        selector=True
-    )
-
     class Meta:
-        model = LicenseAssignment  
+        model = LicenseAssignment
         fields = [
-            "license",
-            "device",
-            "manufacturer",
-            "assigned_to",
-            "volume",
-            "parent_license",
+            "manufacturer", "device_manufacturer",
+            "device", "license", "assigned_to", "volume"
         ]
-
-    filterset_class = LicenseAssignmentFilterSet 

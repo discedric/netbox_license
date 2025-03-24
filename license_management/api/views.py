@@ -10,13 +10,17 @@ class LicenseViewSet(NetBoxModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Allow filtering by manufacturer."""
+        """Allow filtering by manufacturer (legacy support included)."""
         queryset = super().get_queryset()
-        manufacturer_id = self.request.query_params.get("manufacturer_id")
+        manufacturer_id = (
+            self.request.query_params.get("manufacturer_id")
+            or self.request.query_params.get("license_manufacturer_id") 
+        )
         if manufacturer_id:
             queryset = queryset.filter(manufacturer_id=manufacturer_id)
         return queryset
-    
+
+
 class LicenseAssignmentViewSet(NetBoxModelViewSet):
     """API viewset for managing LicenseAssignments"""
     queryset = LicenseAssignment.objects.all()
