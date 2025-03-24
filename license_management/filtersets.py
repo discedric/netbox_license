@@ -3,6 +3,8 @@ from django.db.models import Q
 from .models import License, LicenseAssignment
 from netbox.filtersets import NetBoxModelFilterSet
 from dcim.models import Manufacturer, Device
+from virtualization.models import VirtualMachine
+
 
 class LicenseFilterSet(NetBoxModelFilterSet):
     """Filterset for Software Licenses with enhanced search capability."""
@@ -78,6 +80,24 @@ class LicenseAssignmentFilterSet(NetBoxModelFilterSet):
         field_name="volume",
         label="Volume"
     )
+    device_id = django_filters.ModelChoiceFilter(
+        field_name="device",
+        queryset=Device.objects.all(),
+        label="Device (ID)"
+    )
+
+    manufacturer_id = django_filters.ModelChoiceFilter(
+        field_name="license__manufacturer",
+        queryset=Manufacturer.objects.all(),
+        label="Manufacturer (ID)"
+    )
+
+    virtual_machine_id = django_filters.ModelChoiceFilter(
+        field_name="virtual_machine",
+        queryset=VirtualMachine.objects.all(),
+        label="Virtual Machine (ID)"
+    )
+
 
     class Meta:
         model = LicenseAssignment

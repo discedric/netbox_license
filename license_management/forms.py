@@ -3,14 +3,14 @@ from .models import License, LicenseAssignment
 from dcim.models import Manufacturer, Device
 from utilities.forms.fields import DynamicModelChoiceField
 from netbox.forms import NetBoxModelFilterSetForm, NetBoxModelForm
-from .filtersets import LicenseAssignmentFilterSet
+from .filtersets import LicenseAssignmentFilterSet, LicenseFilterSet
 from virtualization.models import VirtualMachine, Cluster
 from utilities.forms.rendering import FieldSet, TabbedGroups
 
 
-
-class LicenseFilterForm(forms.Form):
-    """Filter form for licenses in object selector"""
+class LicenseFilterForm(NetBoxModelFilterSetForm):
+    model = License
+    filterset_class = LicenseFilterSet
 
     manufacturer = DynamicModelChoiceField(
         queryset=Manufacturer.objects.all(),
@@ -19,22 +19,12 @@ class LicenseFilterForm(forms.Form):
         selector=True
     )
 
-    name = forms.CharField(
+    parent_license = DynamicModelChoiceField(
+        queryset=License.objects.all(),
         required=False,
-        label="License Name"
+        label="Parent License",
+        selector=True
     )
-
-    def filter_queryset(self, queryset):
-        """Apply filters to the queryset based on form data"""
-        manufacturer = self.cleaned_data.get("manufacturer")
-        name = self.cleaned_data.get("name")
-
-        if manufacturer:
-            queryset = queryset.filter(manufacturer=manufacturer)
-        if name:
-            queryset = queryset.filter(name__icontains=name)
-
-        return queryset
 
 class LicenseImportForm(forms.ModelForm):
     """Form for importing Licenses in bulk."""
@@ -133,10 +123,10 @@ class LicenseForm(forms.ModelForm):
     class Meta:
         model = License
         fields = [
-            "manufacturer",  
+            "manufacturer",
+            "name",
             "license_key",
             "product_key",
-            "name",
             "serial_number",
             "description",
             "volume_type",
@@ -163,23 +153,20 @@ class LicenseForm(forms.ModelForm):
         return cleaned_data
 
 class LicenseAssignmentForm(NetBoxModelForm):
-
     manufacturer = DynamicModelChoiceField(
         queryset=Manufacturer.objects.all(),
         required=True,
         label="Manufacturer",
-        selector=True, 
-        quick_add=True  
+        selector=True,
+        quick_add=True
     )
 
     license = DynamicModelChoiceField(
-        queryset=License.objects.all(),
+        queryset=License.objects.none(),  # Will be set in __init__
         required=True,
         label="License",
         selector=True,
-        query_params={
-            'manufacturer_id': '$manufacturer',
-        }
+        query_params={'manufacturer_id': '$manufacturer'}
     )
 
     device_manufacturer = DynamicModelChoiceField(
@@ -190,6 +177,14 @@ class LicenseAssignmentForm(NetBoxModelForm):
         help_text="Select a manufacturer to filter Devices (optional)"
     )
 
+    device = DynamicModelChoiceField(
+        queryset=Device.objects.none(),  # Will be set in __init__
+        required=False,
+        label="Device",
+        selector=True,
+        query_params={"manufacturer_id": "$device_manufacturer"}
+    )
+
     cluster = DynamicModelChoiceField(
         queryset=Cluster.objects.all(),
         required=False,
@@ -198,22 +193,11 @@ class LicenseAssignmentForm(NetBoxModelForm):
         help_text="Select a cluster to filter Virtual Machines (optional)"
     )
 
-    device = DynamicModelChoiceField(
-        queryset=Device.objects.all(),
-        required=False,
-        label="Device",
-        query_params={  
-            'device_type__manufacturer_id': '$device_manufacturer', 
-        }
-    )
-
     virtual_machine = DynamicModelChoiceField(
         queryset=VirtualMachine.objects.all(),
         required=False,
         label="Virtual Machine",
-        query_params={
-            'cluster_id': '$cluster',
-        }
+        query_params={'cluster_id': '$cluster'}
     )
 
     fieldsets = (
@@ -232,43 +216,68 @@ class LicenseAssignmentForm(NetBoxModelForm):
 
     class Meta:
         model = LicenseAssignment
-        fields = ["manufacturer", "license", "device_manufacturer", "device", "cluster", "virtual_machine", "volume", "description"]
+        fields = [
+            "manufacturer", "license",
+            "device_manufacturer", "device",
+            "cluster", "virtual_machine",
+            "volume", "description"
+        ]
         error_messages = {
             "device": {"required": "You must select a device or virtual machine."},
             "virtual_machine": {"required": "You must select a device or virtual machine."},
         }
 
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Ensure device field always has a queryset
-        self.fields["device"].queryset = Device.objects.none()
+        license_manufacturer_id = self._get_value("manufacturer")
+        if license_manufacturer_id:
+            self.fields["license"].queryset = License.objects.filter(manufacturer_id=license_manufacturer_id)
 
-        # Filter Devices by Manufacturer
-        manufacturer_id = self.data.get("device_manufacturer")
-        if manufacturer_id:
-            self.fields["device"].queryset = Device.objects.filter(device_type__manufacturer_id=manufacturer_id)
+        device_manufacturer_id = self._get_device_manufacturer_id()
+        if device_manufacturer_id:
+            self.fields["device"].queryset = Device.objects.filter(device_type__manufacturer_id=device_manufacturer_id)
+            self.fields["device"].widget.add_query_param("device_type__manufacturer_id", device_manufacturer_id)
+        else:
+            self.fields["device"].queryset = Device.objects.none()
 
-        print(f"Filtered Device Queryset: {self.fields['device'].queryset}")
+    def _get_value(self, field_name):
+        """Helper to get a field value from data, initial, or instance"""
+        if self.data.get(field_name):
+            return self.data.get(field_name)
+        if self.initial.get(field_name):
+            return self.initial.get(field_name)
+        if self.instance and getattr(self.instance, field_name, None):
+            return getattr(self.instance, field_name).pk
+        return None
 
-
+    def _get_device_manufacturer_id(self):
+        """Special case for resolving device manufacturer"""
+        if self.data.get("device_manufacturer"):
+            return self.data.get("device_manufacturer")
+        if self.initial.get("device_manufacturer"):
+            return self.initial["device_manufacturer"]
+        if self.instance and self.instance.device:
+            return self.instance.device.device_type.manufacturer_id
+        return None
 
     def clean(self):
-        """Validate that exactly one of device or virtual machine is selected."""
         cleaned_data = super().clean()
+        if not isinstance(cleaned_data, dict):
+            cleaned_data = self.cleaned_data
 
-        print(f"Cleaned Data After Super Call: {cleaned_data}")  # Debugging
 
         device = cleaned_data.get("device")
         virtual_machine = cleaned_data.get("virtual_machine")
 
+        if not device and not virtual_machine:
+            raise forms.ValidationError("You must assign the license to either a Device or a Virtual Machine.")
+
         if device and virtual_machine:
             raise forms.ValidationError("You can only assign a license to either a Device or a Virtual Machine, not both.")
-        if not device and not virtual_machine:
-            raise forms.ValidationError("You must select either a Device or a Virtual Machine.")
 
-        return cleaned_data  
+        return cleaned_data
+
 
 
 class LicenseAssignmentImportForm(forms.ModelForm):

@@ -1,10 +1,10 @@
 {% load helpers %}
 
 <div class="card">
-  <h5 class="card-header">Manufacturer Licenses</h5>
+  <h5 class="card-header">Assigned Licenses</h5>
   {% if licenses %}
     <div class="card-body">
-      <a href="{% url 'plugins:license_management:licenseassignment_list' %}?manufacturer_id={{ object.id }}">
+      <a href="{% url 'plugins:license_management:licenseassignment_list' %}?virtual_machine_id={{ object.id }}">
         {{ licenses|length }} license{{ licenses|length|pluralize }} assigned
       </a>
     </div>

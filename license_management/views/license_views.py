@@ -2,7 +2,7 @@ from license_management.api.serializers.licenses import LicenseSerializer
 from netbox.views import generic
 from utilities.views import register_model_view
 from ..models import License
-from .. import filtersets, tables
+from .. import filtersets, tables, forms
 from netbox.views.generic import ObjectChangeLogView
 
 __all__=(
@@ -29,7 +29,8 @@ class LicenseListView(generic.ObjectListView):
     """View for displaying a list of Licenses"""
     queryset = License.objects.all()
     table = tables.LicenseTable
-    filterset = filtersets.LicenseFilterSet
+    filterset = forms.LicenseFilterSet
+    filterset_form = forms.LicenseFilterForm
     action_buttons = ("add",)
 
 @register_model_view(License, 'detail')
