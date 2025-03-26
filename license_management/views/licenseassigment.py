@@ -1,7 +1,10 @@
 from netbox.views import generic
 from utilities.views import register_model_view
 from ..models import License, LicenseAssignment
+from virtualization.models import VirtualMachine
 from .. import filtersets, tables, forms
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 
 
 __all__ = (
@@ -13,6 +16,7 @@ __all__ = (
     'LicenseAssignmentJournalView',
 )
 
+# -------------------- Object Views --------------------
 @register_model_view(LicenseAssignment)
 class LicenseAssignmentView(generic.ObjectView):
     """View to display details of a license assignment."""

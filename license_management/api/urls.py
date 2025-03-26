@@ -5,7 +5,7 @@ from .views import LicenseViewSet, LicenseAssignmentViewSet
 app_name='license_management'
 
 router = NetBoxRouter()
-router.register(r'license', LicenseViewSet)
+router.register(r'licenses', LicenseViewSet)
 router.register(r'license-assignments', LicenseAssignmentViewSet)
 
 urlpatterns = [

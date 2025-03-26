@@ -39,7 +39,7 @@ class LicenseListView(generic.ObjectListView):
     """View for displaying a list of Licenses"""
     queryset = License.objects.all()
     table = tables.LicenseTable
-    filterset = forms.LicenseFilterSet
+    filterset = filtersets.LicenseFilterSet
     filterset_form = forms.LicenseFilterForm
 
 @register_model_view(License, 'edit')

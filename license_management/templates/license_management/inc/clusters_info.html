@@ -1,0 +1,16 @@
+{% load helpers %}
+
+<div class="card">
+  <h5 class="card-header">Assigned Licenses</h5>
+  {% if licenses %}
+    <div class="card-body">
+      <a href="{% url 'plugins:license_management:licenseassignment_list' %}?virtual_machine__cluster_id={{ object.id }}">
+        {{ licenses|length }} license{{ licenses|length|pluralize }} assigned to virtual machines in this cluster
+      </a>
+    </div>
+  {% else %}
+    <div class="card-body">
+      <span class="text-muted">No licenses assigned</span>
+    </div>
+  {% endif %}
+</div>

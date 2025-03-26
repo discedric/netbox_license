@@ -5,9 +5,6 @@
 
 {% block breadcrumbs %}
   {{ block.super }}
-  <li class="breadcrumb-item">
-    <a href="{% url 'plugins:license_management:licenseassignment_list' %}">License Assignments</a>
-  </li>
   <li class="breadcrumb-item active">{{ object }}</li>
 {% endblock %}
 

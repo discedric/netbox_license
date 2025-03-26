@@ -1,6 +1,5 @@
 from netbox.api.viewsets import NetBoxModelViewSet
 from .serializers import LicenseSerializer, LicenseAssignmentSerializer
-
 from .. import filtersets
 from .. import models
 

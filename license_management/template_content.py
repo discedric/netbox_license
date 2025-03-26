@@ -42,8 +42,24 @@ class VirtualMachineLicenseExtension(PluginTemplateExtension):
         }
         return self.render("license_management/inc/virtual_machines_info.html", extra_context=context)
 
+class ClustersLicenseExtension(PluginTemplateExtension):
+    model = "virtualization.cluster"
+
+    def right_page(self):
+        object = self.context.get("object")
+        LicenseAssignment = apps.get_model("license_management", "LicenseAssignment")
+
+        license_assignments = LicenseAssignment.objects.filter(virtual_machine__cluster=object)
+
+        context = {
+            "licenses": license_assignments,
+            "object": object 
+        }
+        return self.render("license_management/inc/clusters_info.html", extra_context=context)
+
 template_extensions = (
     ManufacturerLicenseExtension,
     DeviceLicenseExtension,
     VirtualMachineLicenseExtension,
+    ClustersLicenseExtension,
 )

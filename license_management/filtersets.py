@@ -4,7 +4,7 @@ from django.db.models import Q
 from .models import License, LicenseAssignment
 from netbox.filtersets import NetBoxModelFilterSet
 from dcim.models import Manufacturer, Device
-from virtualization.models import VirtualMachine
+from virtualization.models import VirtualMachine, Cluster
 
 
 class LicenseFilterSet(NetBoxModelFilterSet):
@@ -22,17 +22,61 @@ class LicenseFilterSet(NetBoxModelFilterSet):
         label=_('Manufacturer name (slug)'),
     )
 
+
     volume_type = django_filters.ChoiceFilter(
         choices=License.VOLUME_TYPE_CHOICES,
         label="Volume Type"
     )
 
-    purchase_date = django_filters.DateFromToRangeFilter(label="Purchase Date (Between)")
-    expiry_date = django_filters.DateFromToRangeFilter(label="Expiry Date (Between)")
+    name = django_filters.CharFilter(
+        lookup_expr='icontains',
+        label="Name"
+    )
+
+    license_key = django_filters.CharFilter(
+        lookup_expr='icontains',
+        label="License Key"
+    )
+
+    product_key = django_filters.CharFilter(
+        lookup_expr='icontains',
+        label="Product Key"
+    )
+
+    serial_number = django_filters.CharFilter(
+        lookup_expr='icontains',
+        label="Serial Number"
+    )
 
     parent_license = django_filters.ModelChoiceFilter(
         queryset=License.objects.filter(parent_license__isnull=True),
         label="Parent License"
+    )
+
+    child_license = django_filters.ModelMultipleChoiceFilter(
+        field_name='sub_licenses',  
+        queryset=License.objects.exclude(parent_license__isnull=True),
+        label="Child Licenses"
+    )
+
+    is_parent_license = django_filters.BooleanFilter(
+        method='filter_is_parent_license',
+        label='Is Parent License'
+    )
+
+    is_child_license = django_filters.BooleanFilter(
+        field_name='parent_license',
+        lookup_expr='isnull',
+        exclude=True,
+        label='Is Child License'
+    )
+
+    purchase_date = django_filters.DateFromToRangeFilter(
+        label="Purchase Date (Between)"
+    )
+
+    expiry_date = django_filters.DateFromToRangeFilter(
+        label="Expiry Date (Between)"
     )
 
     class Meta:
@@ -47,7 +91,15 @@ class LicenseFilterSet(NetBoxModelFilterSet):
             "purchase_date",
             "expiry_date",
             "parent_license",
+            "child_license",
+            "is_parent_license",
+            "is_child_license",
         ]
+
+    def filter_is_parent_license(self, queryset, name, value):
+        if value:
+            return queryset.filter(sub_licenses__isnull=False).distinct()
+        return queryset.filter(sub_licenses__isnull=True)
 
     def search(self, queryset, name, value):
         if not value.strip():
@@ -59,7 +111,6 @@ class LicenseFilterSet(NetBoxModelFilterSet):
             Q(serial_number__icontains=value)
         ).distinct()
 
-
 class LicenseAssignmentFilterSet(NetBoxModelFilterSet):
     """Filterset for License Assignments with comprehensive filtering."""
 
@@ -69,18 +120,36 @@ class LicenseAssignmentFilterSet(NetBoxModelFilterSet):
     )
 
     device = django_filters.ModelChoiceFilter(queryset=Device.objects.all(), label="Device")
+    
     virtual_machine = django_filters.ModelChoiceFilter(queryset=VirtualMachine.objects.all(), label="Virtual Machine")
 
-    manufacturer = django_filters.ModelChoiceFilter(
+    manufacturer_id = django_filters.ModelChoiceFilter(
         field_name="license__manufacturer",
         queryset=Manufacturer.objects.all(),
         label="License Manufacturer"
     )
 
-    device_manufacturer = django_filters.ModelChoiceFilter(
+    device_manufacturer_id = django_filters.ModelChoiceFilter(
         field_name="device__device_type__manufacturer",
         queryset=Manufacturer.objects.all(),
         label="Device Manufacturer"
+    )
+
+    device_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='device',
+        queryset=Device.objects.all(),
+        label="Device (ID)"
+    )
+
+    virtual_machine_id = django_filters.ModelChoiceFilter(
+        queryset=VirtualMachine.objects.all(),
+        label="Virtual Machine"
+    )
+
+    virtual_machine__cluster_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='virtual_machine__cluster',
+        queryset=Cluster.objects.all(),
+        label="Cluster"
     )
 
     assigned_to = django_filters.DateFromToRangeFilter(label="Assigned Date (Between)")

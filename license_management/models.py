@@ -68,6 +68,14 @@ class License(NetBoxModel):
             return f"{self.current_usage()}/∞"
         return f"{self.current_usage()}/{self.volume_limit}"
 
+    @property
+    def is_parent_license(self):
+        return self.sub_licenses.exists()
+
+    @property
+    def is_child_license(self):
+        return self.parent_license is not None
+
     def __str__(self):
         return f"{self.name}"
 

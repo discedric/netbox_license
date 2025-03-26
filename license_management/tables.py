@@ -18,7 +18,18 @@ class LicenseTable(NetBoxTable):
         verbose_name="Parent License",
         linkify=True
     )
+    
     volume_type = tables.Column(verbose_name="Volume Type")
+
+    is_parent_license = tables.Column(
+        verbose_name='Parent?',
+        empty_values=()
+    )
+
+    is_child_license = tables.Column(
+        verbose_name='Child?',
+        empty_values=()
+    )
 
     assigned_count = tables.Column(empty_values=(), verbose_name="Assigned")
 
@@ -30,16 +41,25 @@ class LicenseTable(NetBoxTable):
             return f"{assigned}/{record.volume_limit or '∞'}"
         return f"{assigned}/1"
 
+    
+    def render_is_parent_license(self, record):
+        return "✅" if record.is_parent_license else "❌"
+
+    def render_is_child_license(self, record):
+        return "✅" if record.is_child_license else "❌"
+
     class Meta(NetBoxTable.Meta):
         model = License
         fields = (
             "name", "license_key", "product_key",
-            "manufacturer", "parent_license", "description",
+            "manufacturer", "parent_license",
+            "is_parent_license", "is_child_license", "description",
             "assigned_count", "volume_type",
             "expiry_date", "purchase_date",
         )
         default_columns = fields
         attrs = {"class": "table table-striped table-bordered"}
+
 
 
 class LicenseAssignmentTable(NetBoxTable):
