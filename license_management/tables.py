@@ -1,55 +1,29 @@
-from netbox.tables import NetBoxTable
-import django_tables2 as tables
 from django.db.models import Sum
+from django_tables2 import tables
+from netbox.tables import NetBoxTable
 from .models import License, LicenseAssignment
 
 
 class LicenseTable(NetBoxTable):
-    """Table displaying licenses with clickable fields."""
-
-    name = tables.LinkColumn(
-        "plugins:license_management:license_detail",
-        args=[tables.A('pk')],
-        verbose_name="License Name",
-        attrs={"a": {"class": "text-primary"}},
-    )
-
-    license_key = tables.LinkColumn(
-        "plugins:license_management:license_detail",
-        args=[tables.A('pk')],
-        verbose_name="License Key",
-        attrs={"a": {"class": "text-primary"}},
-    )
-
+    name = tables.Column(linkify=True)
+    license_key = tables.Column(linkify=True)
     product_key = tables.Column(verbose_name="Product Key")
-
-    manufacturer = tables.LinkColumn(
-        "dcim:manufacturer",
-        args=[tables.A("manufacturer.pk")],
+    manufacturer = tables.Column(
         verbose_name="License Manufacturer",
-        empty_values=(),
+        accessor="manufacturer",
+        linkify=True
     )
-
-    parent_license = tables.TemplateColumn(
-        template_code="""
-        {% if record.parent_license %}
-            <a href="{% url 'plugins:license_management:license_detail' record.parent_license.pk %}">
-                {{ record.parent_license.name }}
-            </a>
-        {% else %}
-            -
-        {% endif %}
-        """,
+    parent_license = tables.Column(
+        accessor="parent_license",
         verbose_name="Parent License",
-        orderable=False
+        linkify=True
     )
+    volume_type = tables.Column(verbose_name="Volume Type")
 
     assigned_count = tables.Column(empty_values=(), verbose_name="Assigned")
-    volume_type = tables.Column(accessor="volume_type", verbose_name="Volume Type")
 
     def render_assigned_count(self, record):
         assigned = record.assignments.aggregate(total=Sum('volume'))['total'] or 0
-
         if record.volume_type == "UNLIMITED":
             return f"{assigned}/∞"
         elif record.volume_type == "VOLUME":
@@ -59,107 +33,56 @@ class LicenseTable(NetBoxTable):
     class Meta(NetBoxTable.Meta):
         model = License
         fields = (
-            "name",
-            "license_key",
-            "product_key",
-            "manufacturer",
-            "description",
-            "assigned_count",
-            "volume_type",
-            "parent_license",
-            "expiry_date",
-            "purchase_date",
+            "name", "license_key", "product_key",
+            "manufacturer", "parent_license", "description",
+            "assigned_count", "volume_type",
+            "expiry_date", "purchase_date",
         )
         default_columns = fields
+        attrs = {"class": "table table-striped table-bordered"}
 
 
 class LicenseAssignmentTable(NetBoxTable):
-    """Table displaying License Assignments with clickable fields."""
-
-    license_name = tables.TemplateColumn(
-        template_code="""
-        {% if record.license %}
-            <a href="{% url 'plugins:license_management:license_detail' record.license.pk %}">
-                {{ record.license.name }}
-            </a>
-        {% else %}
-            -
-        {% endif %}
-        """,
-        verbose_name="License Name",
-        orderable=False
+    license = tables.Column(
+        accessor="license",
+        verbose_name="License",
+        linkify=True
     )
-
-    license_key = tables.TemplateColumn(
-        template_code="""
-        {% if record.license %}
-            <a href="{% url 'plugins:license_management:license_detail' record.license.pk %}">
-                {{ record.license.license_key }}
-            </a>
-        {% else %}
-            -
-        {% endif %}
-        """,
+    license_key = tables.Column(
+        accessor="license.license_key",
         verbose_name="License Key",
-        orderable=False
+        linkify=True
     )
-
-    manufacturer = tables.LinkColumn(
-        "dcim:manufacturer",
-        args=[tables.A("license.manufacturer.pk")],
+    manufacturer = tables.Column(
+        accessor="license.manufacturer",
         verbose_name="License Manufacturer",
-        empty_values=(),
+        linkify=True
     )
-
-    device = tables.LinkColumn(
-        "dcim:device",
-        args=[tables.A("device.pk")],
-        verbose_name="Device"
+    device = tables.Column(
+        accessor="device",
+        verbose_name="Device",
+        linkify=True
     )
-
-    device_manufacturer = tables.TemplateColumn(
-        template_code="""
-        {% if record.device.device_type.manufacturer %}
-            <a href="{% url 'dcim:manufacturer' record.device.device_type.manufacturer.pk %}">
-                {{ record.device.device_type.manufacturer.name }}
-            </a>
-        {% else %}
-            -
-        {% endif %}
-        """,
+    device_manufacturer = tables.Column(
+        accessor="device.device_type.manufacturer",
         verbose_name="Device Manufacturer",
-        orderable=False
+        linkify=True
     )
-
-    virtual_machine = tables.TemplateColumn(
-        template_code="""
-        {% if record.virtual_machine %}
-            <a href="{% url 'virtualization:virtualmachine' record.virtual_machine.pk %}">
-                {{ record.virtual_machine.name }}
-            </a>
-        {% else %}
-            -
-        {% endif %}
-        """,
+    virtual_machine = tables.Column(
+        accessor="virtual_machine",
         verbose_name="Virtual Machine",
-        orderable=False
+        linkify=True
     )
-
     volume = tables.Column(verbose_name="Volume")
-    assigned_to = tables.DateColumn(verbose_name="Assigned On")
-    description = tables.Column(verbose_name="Description", empty_values=())
+    assigned_to = tables.Column(verbose_name="Assigned On")
+    description = tables.Column(verbose_name="Description")
 
     class Meta(NetBoxTable.Meta):
         model = LicenseAssignment
         fields = (
-            "license_name",
-            "license_key",
-            "manufacturer",
-            "device",
-            "device_manufacturer",
-            "virtual_machine",
-            "volume",
-            "assigned_to",
-            "description"
+            "license", "license_key", "manufacturer",
+            "device", "device_manufacturer",
+            "virtual_machine", "volume",
+            "assigned_to", "description"
         )
-        default_columns = fields
+        attrs = {"class": "table table-striped table-bordered"}

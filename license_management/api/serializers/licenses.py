@@ -1,17 +1,15 @@
 from rest_framework import serializers
-from license_management.models import License
+from netbox.api.serializers import NetBoxModelSerializer
+from license_management.models import License, LicenseAssignment
 
-class LicenseSerializer(serializers.ModelSerializer):
-    """Serializer for the License model"""
-
-    display = serializers.SerializerMethodField()
-
+class LicenseSerializer(NetBoxModelSerializer):
     class Meta:
         model = License
-        fields = ["id", "name", "license_key", "manufacturer", "description", "display"]
+        fields = '__all__'
 
-    def get_display(self, obj):
-        """Format display field to include name and description"""
-        if obj.description:
-            return f"{obj.name}"
-        return obj.name 
+
+class LicenseAssignmentSerializer(NetBoxModelSerializer):
+    license = LicenseSerializer(nested=True, required=True)
+    class Meta:
+        model = LicenseAssignment
+        fields = '__all__'

@@ -1,5 +1,7 @@
 {% extends 'generic/object.html' %}
 {% load helpers %}
+{% load humanize %}
+{% load plugins %}
 
 {% block title %}
   {{ object.name }} - {{ object.license_key }}
@@ -8,7 +10,7 @@
 {% block breadcrumbs %}
   {{ block.super }}
   <li class="breadcrumb-item">
-    <a href="{% url 'plugins:license_management:license_list' %}">Licenses</a>
+    <a href="{% url 'plugins:license_management:license_list' %}">License</a>
   </li>
   <li class="breadcrumb-item active">{{ object }}</li>
 {% endblock %}
@@ -110,6 +112,11 @@
 
     {% include 'inc/panels/tags.html' %}
     {% include 'inc/panels/comments.html' %}
+  </div>
+</div>
+<div class="row mb-3">
+  <div class="col col-md-12">
+    {% plugin_full_width_page object %}
   </div>
 </div>
 {% endblock %}

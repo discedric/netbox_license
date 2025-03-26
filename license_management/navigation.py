@@ -36,7 +36,7 @@ license_items = [
 # Top-Level Menu Handling
 if get_plugin_config('license_management', 'top_level_menu'):
     menu = PluginMenu(
-        label='License Management',
+        label=f'Licenses',
         groups=(('Licenses', license_items),),
         icon_class='mdi mdi-clipboard-text-multiple-outline'
     )

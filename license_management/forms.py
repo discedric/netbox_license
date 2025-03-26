@@ -1,7 +1,7 @@
 from django import forms
 from .models import License, LicenseAssignment
 from dcim.models import Manufacturer, Device
-from utilities.forms.fields import DynamicModelChoiceField
+from utilities.forms.fields import CommentField, DynamicModelChoiceField
 from netbox.forms import NetBoxModelFilterSetForm, NetBoxModelForm
 from .filtersets import LicenseAssignmentFilterSet, LicenseFilterSet
 from virtualization.models import VirtualMachine, Cluster
@@ -24,6 +24,8 @@ class LicenseFilterForm(NetBoxModelFilterSetForm):
         label="Parent License",
         selector=True
     )
+
+    
 
 
 class LicenseImportForm(forms.ModelForm):
@@ -92,11 +94,7 @@ class LicenseForm(NetBoxModelForm):
         label="Expiry Date"
     )
 
-    comment = forms.CharField(
-        required=False,
-        widget=forms.Textarea(attrs={"rows": 3}),
-        label="Comment"
-    )
+    comment = CommentField()
 
     class Meta:
         model = License
@@ -125,7 +123,6 @@ class LicenseForm(NetBoxModelForm):
             return cleaned_data
 
 
-
 class LicenseAssignmentForm(NetBoxModelForm):
     manufacturer = DynamicModelChoiceField(
         queryset=Manufacturer.objects.all(),
@@ -140,40 +137,38 @@ class LicenseAssignmentForm(NetBoxModelForm):
         required=True,
         label="License",
         selector=True,
-        query_params={'manufacturer_id': '$manufacturer'}
-    )
-
-    device_manufacturer = DynamicModelChoiceField(
-        queryset=Manufacturer.objects.all(),
-        required=False,
-        label="Device Manufacturer",
-        selector=True,
-        help_text="Select a manufacturer to filter Devices (optional)"
+        query_params={
+            'manufacturer_id': '$manufacturer'
+        }
     )
 
     device = DynamicModelChoiceField(
-        queryset=Device.objects.none(),
+        queryset=Device.objects.all(),
         required=False,
         label="Device",
-        selector=True,
-        query_params={"device_type__manufacturer_id": "$device_manufacturer"}
-    )
-
-    cluster = DynamicModelChoiceField(
-        queryset=Cluster.objects.all(),
-        required=False,
-        label="Cluster",
-        selector=True,
-        help_text="Select a cluster to filter Virtual Machines (optional)"
+        selector=True
     )
 
     virtual_machine = DynamicModelChoiceField(
-        queryset=VirtualMachine.objects.none(),
+        queryset=VirtualMachine.objects.all(),
         required=False,
         label="Virtual Machine",
-        selector=True,
-        query_params={'cluster_id': '$cluster'}
+        selector=True
     )
+
+    device_manufacturer_display = forms.CharField(
+        required=False,
+        label="Device Manufacturer",
+        disabled=True
+    )
+
+    cluster_display = forms.CharField(
+        required=False,
+        label="Cluster",
+        disabled=True
+    )
+
+    comments = CommentField()
 
     fieldsets = (
         FieldSet(
@@ -182,8 +177,8 @@ class LicenseAssignmentForm(NetBoxModelForm):
         ),
         FieldSet(
             TabbedGroups(
-                FieldSet("device_manufacturer", "device", name="Device Assignment"),
-                FieldSet("cluster", "virtual_machine", name="Virtual Machine Assignment"),
+                FieldSet("device", "device_manufacturer_display", name="Device Assignment"),
+                FieldSet("virtual_machine", "cluster_display", name="Virtual Machine Assignment"),
             ),
             name="Assignment Type"
         ),
@@ -192,55 +187,44 @@ class LicenseAssignmentForm(NetBoxModelForm):
     class Meta:
         model = LicenseAssignment
         fields = [
-            "manufacturer", "license",
-            "device_manufacturer", "device",
-            "cluster", "virtual_machine",
-            "volume", "description"
+            "manufacturer", "license", "device", "virtual_machine",
+            "volume", "description",'comments'
         ]
-        error_messages = {
-            "device": {"required": "You must select a device or virtual machine."},
-            "virtual_machine": {"required": "You must select a device or virtual machine."},
-        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        license_manufacturer_id = self._get_value("manufacturer")
-        if license_manufacturer_id:
-            self.fields["license"].queryset = License.objects.filter(manufacturer_id=license_manufacturer_id)
+        manufacturer = self.data.get("manufacturer") or self.initial.get("manufacturer") or getattr(self.instance, "manufacturer", None)
 
-        device_manufacturer_id = self._get_device_manufacturer_id()
-        self.fields["device"].widget.add_query_param("device_type__manufacturer_id", device_manufacturer_id or "")
-        if device_manufacturer_id:
-            self.fields["device"].queryset = Device.objects.filter(
-        device_type__manufacturer_id=device_manufacturer_id
-        )
+        if manufacturer:
+            self.fields["license"].queryset = License.objects.filter(manufacturer=manufacturer)
+
+        if self.instance.pk:
+            self.fields['manufacturer'].disabled = True
+            self.fields['license'].disabled = True
+            self.fields['device'].disabled = True
+            self.fields['virtual_machine'].disabled = True
+
+            if self.instance.device:
+                self.fields['device_manufacturer_display'].initial = self.instance.device.device_type.manufacturer.name
+            elif self.instance.virtual_machine:
+                self.fields['cluster_display'].initial = self.instance.virtual_machine.cluster.name
+
         else:
-            self.fields["device"].queryset = Device.objects.all()
-
-    def _get_value(self, field_name):
-        """Helper to get a field value from data, initial, or instance"""
-        if self.data.get(field_name):
-            return self.data.get(field_name)
-        if self.initial.get(field_name):
-            return self.initial.get(field_name)
-        if self.instance and getattr(self.instance, field_name, None):
-            return getattr(self.instance, field_name).pk
-        return None
-
-    def _get_device_manufacturer_id(self):
-        """Special case for resolving device manufacturer"""
-        if self.data.get("device_manufacturer"):
-            return self.data.get("device_manufacturer")
-        if self.initial.get("device_manufacturer"):
-            return self.initial["device_manufacturer"]
-        if self.instance and self.instance.device:
-            return self.instance.device.device_type.manufacturer_id
-        return None
+            if self.data.get("device"):
+                self.fields['virtual_machine'].disabled = True
+                self.fields['cluster_display'].initial = "(disabled)"
+            elif self.data.get("virtual_machine"):
+                self.fields['device'].disabled = True
+                self.fields['device_manufacturer_display'].initial = "(disabled)"
 
     def clean(self):
-        super().clean()
-        cleaned_data = self.cleaned_data
+        cleaned_data = super().clean()
+        if not cleaned_data:
+            return cleaned_data
+
+        device = cleaned_data.get("device")
+        virtual_machine = cleaned_data.get("virtual_machine")
 
         device = cleaned_data.get("device")
         virtual_machine = cleaned_data.get("virtual_machine")
@@ -251,10 +235,27 @@ class LicenseAssignmentForm(NetBoxModelForm):
         if device and virtual_machine:
             raise forms.ValidationError("You can only assign a license to either a Device or a Virtual Machine, not both.")
 
+        if device:
+            cleaned_data['device_manufacturer_display'] = device.device_type.manufacturer.name
+        if virtual_machine:
+            cleaned_data['cluster_display'] = virtual_machine.cluster.name
+
         return cleaned_data
 
+    def save(self, commit=True):
+        assignment = super().save(commit=False)
 
+        if self.cleaned_data.get('virtual_machine'):
+            assignment.virtual_machine = self.cleaned_data['virtual_machine']
+            assignment.device = None
+        elif self.cleaned_data.get('device'):
+            assignment.device = self.cleaned_data['device']
+            assignment.virtual_machine = None
 
+        if commit:
+            assignment.save()
+
+        return assignment
 
 class LicenseAssignmentImportForm(forms.ModelForm):
     class Meta:
@@ -272,35 +273,47 @@ class LicenseAssignmentFilterForm(NetBoxModelFilterSetForm):
     model = LicenseAssignment
     filterset_class = LicenseAssignmentFilterSet
 
-    manufacturer = DynamicModelChoiceField(
+    manufacturer_id = DynamicModelChoiceField(
         queryset=Manufacturer.objects.all(),
         required=False,
         label="License Manufacturer",
         selector=True
     )
-    device_manufacturer = DynamicModelChoiceField(
+    device_manufacturer_id = DynamicModelChoiceField(
         queryset=Manufacturer.objects.all(),
         required=False,
         label="Device Manufacturer",
-        selector=True
+        selector=True,
+        query_params={
+            'manufacturer_id': '$manufacturer_id'
+        },
     )
 
     device = DynamicModelChoiceField(
         queryset=Device.objects.all(),
         required=False,
         label="Device",
-        selector=True
+        selector=True,
+        query_params={
+            'manufacturer_id': '$manufacturer_id'
+        },
     )
     license = DynamicModelChoiceField(
         queryset=License.objects.all(),
         required=False,
         label="License",
-        selector=True
+        selector=True,
+        query_params={
+            'manufacturer_id': '$manufacturer_id'
+        },
     )
+
+    comments = CommentField()
 
     class Meta:
         model = LicenseAssignment
         fields = [
             "manufacturer", "device_manufacturer",
-            "device", "license", "assigned_to", "volume"
+            "device", "license", "assigned_to", "volume",
+            'comments'
         ]

@@ -1,27 +1,17 @@
 from netbox.api.viewsets import NetBoxModelViewSet
-from license_management.models import License, LicenseAssignment
 from .serializers import LicenseSerializer, LicenseAssignmentSerializer
-from rest_framework.permissions import IsAuthenticated
+
+from .. import filtersets
+from .. import models
 
 class LicenseViewSet(NetBoxModelViewSet):
     """API view for managing Licenses"""
-    queryset = License.objects.all()
+    queryset = models.License.objects.all()
     serializer_class = LicenseSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        """Allow filtering by manufacturer (legacy support included)."""
-        queryset = super().get_queryset()
-        manufacturer_id = (
-            self.request.query_params.get("manufacturer_id")
-            or self.request.query_params.get("license_manufacturer_id") 
-        )
-        if manufacturer_id:
-            queryset = queryset.filter(manufacturer_id=manufacturer_id)
-        return queryset
-
+    filterset_class = filtersets.LicenseFilterSet
 
 class LicenseAssignmentViewSet(NetBoxModelViewSet):
     """API viewset for managing LicenseAssignments"""
-    queryset = LicenseAssignment.objects.all()
+    queryset = models.LicenseAssignment.objects.all()
     serializer_class = LicenseAssignmentSerializer
+    filterset_class = filtersets.LicenseAssignmentFilterSet

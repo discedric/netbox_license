@@ -1,4 +1,5 @@
 import django_filters
+from django.utils.translation import gettext as _
 from django.db.models import Q
 from .models import License, LicenseAssignment
 from netbox.filtersets import NetBoxModelFilterSet
@@ -9,12 +10,16 @@ from virtualization.models import VirtualMachine
 class LicenseFilterSet(NetBoxModelFilterSet):
     """Filterset for Software Licenses with enhanced search capability."""
 
-    q = django_filters.CharFilter(method="search", label="Search")
-
-    manufacturer = django_filters.ModelChoiceFilter(
+    manufacturer_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='manufacturer',
         queryset=Manufacturer.objects.all(),
-        field_name="manufacturer",
-        label="License Manufacturer"
+        label=_('Manufacturer (ID)'),
+    )
+    manufacturer = django_filters.ModelMultipleChoiceFilter(
+        field_name='manufacturer__slug',
+        queryset=Manufacturer.objects.all(),
+        to_field_name='slug',
+        label=_('Manufacturer name (slug)'),
     )
 
     volume_type = django_filters.ChoiceFilter(
@@ -45,6 +50,8 @@ class LicenseFilterSet(NetBoxModelFilterSet):
         ]
 
     def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
         return queryset.filter(
             Q(name__icontains=value) |
             Q(license_key__icontains=value) |
@@ -55,7 +62,6 @@ class LicenseFilterSet(NetBoxModelFilterSet):
 
 class LicenseAssignmentFilterSet(NetBoxModelFilterSet):
     """Filterset for License Assignments with comprehensive filtering."""
-    q = django_filters.CharFilter(method="search", label="Search")
 
     license = django_filters.ModelChoiceFilter(
         queryset=License.objects.all(),

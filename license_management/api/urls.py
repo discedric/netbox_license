@@ -1,8 +1,13 @@
-from rest_framework.routers import DefaultRouter
+from netbox.api.routers import NetBoxRouter
+from django.urls import path, include
 from .views import LicenseViewSet, LicenseAssignmentViewSet
 
-router = DefaultRouter()
-router.register(r'licenses', LicenseViewSet)
-router.register(r'assignments', LicenseAssignmentViewSet)
+app_name='license_management'
 
-urlpatterns = router.urls
+router = NetBoxRouter()
+router.register(r'license', LicenseViewSet)
+router.register(r'license-assignments', LicenseAssignmentViewSet)
+
+urlpatterns = [
+    path('', include(router.urls)),
+]
