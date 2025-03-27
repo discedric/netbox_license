@@ -5,6 +5,8 @@ from virtualization.models import VirtualMachine
 from django.utils.timezone import now
 from django.urls import reverse
 from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
+
 
 
 class License(NetBoxModel):
@@ -58,6 +60,10 @@ class License(NetBoxModel):
         elif self.volume_type == "VOLUME":
             if not self.volume_limit or self.volume_limit < 2:
                 raise ValidationError("Volume licenses require a volume limit of at least 2.")
+
+        if self.purchase_date and self.expiry_date:
+            if self.expiry_date < self.purchase_date:
+                raise ValidationError(_("Expiry date cannot be earlier than purchase date."))
 
     def current_usage(self):
         assigned = self.assignments.aggregate(models.Sum('volume'))['volume__sum'] or 0
@@ -142,11 +148,14 @@ class LicenseAssignment(NetBoxModel):
         if license:
             volume_type = license.volume_type
             if volume_type == "SINGLE":
-                self.volume = 1
+                if self.volume != 1:
+                    raise ValidationError("Single licenses can only have a volume of 1.")
+
                 existing_assignments = license.assignments.exclude(pk=self.pk).count()
                 if existing_assignments >= 1:
                     raise ValidationError("Single licenses can only be assigned to one entity (Device or VM).")
 
+                    
             elif volume_type == "VOLUME":
                 if self.volume < 1:
                     raise ValidationError("Volume quantity must be at least 1.")
@@ -158,6 +167,11 @@ class LicenseAssignment(NetBoxModel):
                     raise ValidationError(
                         f"Exceeds volume limit ({license.volume_limit}). Currently assigned: {total_assigned_volume}."
                     )
+
+
+    clone_fields = [
+            'manufacturer', 'license', 'device', 'virtual_machine', 'description',
+        ]
 
     def __str__(self):
         return f"{self.license.name} → {self.device or self.virtual_machine} ({self.volume})"

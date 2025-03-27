@@ -56,6 +56,7 @@ class LicenseAssignmentEditView(generic.ObjectEditView):
     """View to create or edit a license assignment."""
     queryset = LicenseAssignment.objects.all()
     form = forms.LicenseAssignmentForm
+    default_return_url = 'plugins:license_management:licenseassignment_list'
 
 @register_model_view(LicenseAssignment, 'delete')
 class LicenseAssignmentDeleteView(generic.ObjectDeleteView):

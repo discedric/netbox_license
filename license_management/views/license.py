@@ -48,6 +48,7 @@ class LicenseEditView(generic.ObjectEditView):
     """View for creating or editing a license."""
     queryset = License.objects.all()
     form = forms.LicenseForm
+    default_return_url = 'plugins:license_management:license_list'
 
 @register_model_view(License, 'delete')
 class LicenseDeleteView(generic.ObjectDeleteView):
@@ -67,6 +68,7 @@ class LicenseBulkEditView(generic.BulkEditView):
     filterset = filtersets.LicenseFilterSet
     table = tables.LicenseTable
     form = forms.LicenseBulkEditForm
+    default_return_url = 'plugins:license_management:license_list'
 
 @register_model_view(License, 'bulk_delete', path='delete', detail=False)
 class LicenseBulkDeleteView(generic.BulkDeleteView):
