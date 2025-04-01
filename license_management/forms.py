@@ -233,44 +233,6 @@ class LicenseTypeForm(NetBoxModelForm):
         ]
 
 
-class LicenseTypeFilterForm(NetBoxModelFilterSetForm):
-    model = LicenseType
-    filterset_class = filtersets.LicenseTypeFilterSet
-
-    fieldsets = (
-        FieldSet('q', name='Search'),
-        FieldSet('manufacturer_id', 'volume_type', 'license_model', 'purchase_model', name='Details'),
-    )
-
-    manufacturer_id = DynamicModelMultipleChoiceField(
-        queryset=Manufacturer.objects.all(),
-        required=False,
-        label="Manufacturer"
-    )
-
-    volume_type = forms.ChoiceField(
-        choices=[('', '---------')] + LicenseType.VOLUME_TYPE_CHOICES,
-        required=False,
-        label="Volume Type"
-    )
-
-    license_model = forms.ChoiceField(
-        choices=[('', '---------')] + LicenseType.LICENSE_MODEL_CHOICES,
-        required=False,
-        label="License Model"
-    )
-
-    purchase_model = forms.ChoiceField(
-        choices=[('', '---------')] + LicenseType.PURCHASE_MODEL_CHOICES,
-        required=False,
-        label="Purchase Model"
-    )
-
-    q = forms.CharField(
-        required=False,
-        label='Search'
-    )
-
 class LicenseAssignmentForm(NetBoxModelForm):
     manufacturer = DynamicModelChoiceField(
         queryset=Manufacturer.objects.all(),
@@ -378,6 +340,45 @@ class LicenseAssignmentForm(NetBoxModelForm):
 
         return assignment
     
+class LicenseTypeFilterForm(NetBoxModelFilterSetForm):
+    model = LicenseType
+    filterset_class = filtersets.LicenseTypeFilterSet
+
+    fieldsets = (
+        FieldSet('q', name='Search'),
+        FieldSet('manufacturer_id', 'volume_type', 'license_model', 'purchase_model', name='Details'),
+    )
+
+    manufacturer_id = DynamicModelMultipleChoiceField(
+        queryset=Manufacturer.objects.all(),
+        required=False,
+        label="Manufacturer"
+    )
+
+    volume_type = forms.ChoiceField(
+        choices=[('', '---------')] + LicenseType.VOLUME_TYPE_CHOICES,
+        required=False,
+        label="Volume Type"
+    )
+
+    license_model = forms.ChoiceField(
+        choices=[('', '---------')] + LicenseType.LICENSE_MODEL_CHOICES,
+        required=False,
+        label="License Model"
+    )
+
+    purchase_model = forms.ChoiceField(
+        choices=[('', '---------')] + LicenseType.PURCHASE_MODEL_CHOICES,
+        required=False,
+        label="Purchase Model"
+    )
+
+    q = forms.CharField(
+        required=False,
+        label='Search'
+    )
+
+
 class LicenseTypeImportForm(NetBoxModelImportForm):
     manufacturer = CSVModelChoiceField(
         queryset=Manufacturer.objects.all(),
@@ -414,6 +415,22 @@ class LicenseTypeImportForm(NetBoxModelImportForm):
             "purchase_model": "Peripheral or subscription",
             "description": "Optional notes",
         }
+
+class LicenseTypeBulkEditForm(forms.ModelForm):
+    class Meta:
+        model = LicenseType
+        fields = [
+            "name",
+            "slug",
+            "manufacturer",
+            "product_code",
+            "ean_code",
+            "volume_type",
+            "license_model",
+            "purchase_model",
+            "description",
+            "comments",
+        ]
 
 class LicenseAssignmentImportForm(NetBoxModelImportForm):
     manufacturer = CSVModelChoiceField(
