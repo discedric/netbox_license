@@ -1,3 +1,4 @@
 from .license import *
-from .licenseassigment import *
+from .licenseassignment import *
+from .licensetype import *
 

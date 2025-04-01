@@ -1,7 +1,7 @@
 from django.db.models import Sum
 from django_tables2 import tables
 from netbox.tables import NetBoxTable
-from .models import License, LicenseAssignment
+from .models import License, LicenseAssignment, LicenseType
 
 
 class LicenseTable(NetBoxTable):
@@ -18,8 +18,8 @@ class LicenseTable(NetBoxTable):
         verbose_name="Parent License",
         linkify=True
     )
-    
-    volume_type = tables.Column(verbose_name="Volume Type")
+
+    volume_type = tables.Column(verbose_name="Volume Type", empty_values=())
 
     is_parent_license = tables.Column(
         verbose_name='Parent?',
@@ -35,13 +35,17 @@ class LicenseTable(NetBoxTable):
 
     def render_assigned_count(self, record):
         assigned = record.assignments.aggregate(total=Sum('volume'))['total'] or 0
-        if record.volume_type == "UNLIMITED":
+        volume_type = getattr(record.license_type, 'volume_type', None)
+
+        if volume_type == "UNLIMITED":
             return f"{assigned}/∞"
-        elif record.volume_type == "VOLUME":
+        elif volume_type == "VOLUME":
             return f"{assigned}/{record.volume_limit or '∞'}"
         return f"{assigned}/1"
 
-    
+    def render_volume_type(self, record):
+        return getattr(record.license_type, 'get_volume_type_display', lambda: '—')()
+
     def render_is_parent_license(self, record):
         return "✅" if record.is_parent_license else "❌"
 
@@ -60,6 +64,30 @@ class LicenseTable(NetBoxTable):
         default_columns = fields
         attrs = {"class": "table table-striped table-bordered"}
 
+class LicenseTypeTable(NetBoxTable):
+    name = tables.Column(linkify=True)
+    slug = tables.Column()
+    manufacturer = tables.Column(
+        verbose_name="Manufacturer",
+        linkify=True
+    )
+    product_code = tables.Column(verbose_name="Product Code")
+    ean_code = tables.Column(verbose_name="EAN Code")
+    volume_type = tables.Column(verbose_name="Volume Type")
+    license_model = tables.Column(verbose_name="License Model")
+    purchase_model = tables.Column(verbose_name="Purchase Model")
+    description = tables.Column()
+
+    class Meta(NetBoxTable.Meta):
+        model = LicenseType
+        fields = (
+            "name", "slug", "manufacturer",
+            "product_code", "ean_code",
+            "volume_type", "license_model", "purchase_model",
+            "description"
+        )
+        default_columns = fields
+        attrs = {"class": "table table-striped table-bordered"}
 
 
 class LicenseAssignmentTable(NetBoxTable):

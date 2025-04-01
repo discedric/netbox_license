@@ -10,35 +10,31 @@ from django.utils.translation import gettext_lazy as _
 
 
 class License(NetBoxModel):
-    """Represents a software license that can be assigned to devices."""
+    """Represents a specific license key instance that can be assigned."""
 
-    VOLUME_TYPE_CHOICES = [
-        ("SINGLE", "Single License (1 device)"),
-        ("VOLUME", "Volume License (multiple devices)"),
-        ("UNLIMITED", "Unlimited License"),
-    ]
-    
-    name = models.CharField(max_length=255)
     license_key = models.CharField(max_length=255, unique=True)
-    product_key = models.CharField(max_length=255, blank=True, null=True)
     serial_number = models.CharField(max_length=255, blank=True, null=True)
     description = models.CharField(max_length=255, blank=True, null=True)
     comments = models.TextField(blank=True, null=True)
+    license_type = models.ForeignKey(
+        'LicenseType',
+        on_delete=models.PROTECT,
+        related_name="licenses"
+    )
+
+
     manufacturer = models.ForeignKey(
         Manufacturer,
         on_delete=models.PROTECT,
         related_name="licenses",
-        null=True,
-        blank=True
+        null=True, blank=True,
+        help_text="Redundant for filtering; copied from license_type."
     )
     purchase_date = models.DateField(null=True, blank=True)
     expiry_date = models.DateField(null=True, blank=True)
-    volume_type = models.CharField(  
-        max_length=20, choices=VOLUME_TYPE_CHOICES, default="SINGLE"
-    )
     volume_limit = models.PositiveIntegerField(
         null=True, blank=True,
-        help_text="Maximum number of assignments allowed. Required if volume license."
+        help_text="Required if license type is volume."
     )
     parent_license = models.ForeignKey(
         to='self',
@@ -48,16 +44,16 @@ class License(NetBoxModel):
         help_text="Link to parent license for extensions."
     )
 
-    clone_fields = [
-        'name', 'license_key', 'product_key', 'serial_number', 'description',
-    ]
-
     def clean(self):
-        if self.volume_type == "SINGLE":
+        if self.license_type:
+            self.manufacturer = self.license_type.manufacturer
+
+        vt = self.license_type.volume_type if self.license_type else None
+        if vt == "SINGLE":
             self.volume_limit = 1
-        elif self.volume_type == "UNLIMITED":
+        elif vt == "UNLIMITED":
             self.volume_limit = None
-        elif self.volume_type == "VOLUME":
+        elif vt == "VOLUME":
             if not self.volume_limit or self.volume_limit < 2:
                 raise ValidationError("Volume licenses require a volume limit of at least 2.")
 
@@ -70,7 +66,8 @@ class License(NetBoxModel):
         return assigned
 
     def usage_display(self):
-        if self.volume_type == "UNLIMITED":
+        vt = self.license_type.volume_type if self.license_type else ""
+        if vt == "UNLIMITED":
             return f"{self.current_usage()}/∞"
         return f"{self.current_usage()}/{self.volume_limit}"
 
@@ -83,14 +80,62 @@ class License(NetBoxModel):
         return self.parent_license is not None
 
     def __str__(self):
-        return f"{self.name}"
+        return f"{self.license_key}"
 
     def get_absolute_url(self):
         return reverse("plugins:license_management:license", args=[self.pk])
 
     class Meta:
-        verbose_name = 'License'
-        verbose_name_plural = 'Licenses'
+        verbose_name = "License"
+        verbose_name_plural = "Licenses"
+
+
+class LicenseType(NetBoxModel):
+    """Represents a general definition of a license type (e.g. Windows 10 Pro Volume License)."""
+
+    VOLUME_TYPE_CHOICES = [
+        ("SINGLE", "Single License (1 device)"),
+        ("VOLUME", "Volume License (multiple devices)"),
+        ("UNLIMITED", "Unlimited License"),
+    ]
+
+    LICENSE_MODEL_CHOICES = [
+        ("BASE", "Base License"),
+        ("EXPANSION", "Expansion Pack"),
+    ]
+
+    PURCHASE_MODEL_CHOICES = [
+        ("PERIPHERAL", "Peripheral"),
+        ("SUBSCRIPTION", "Subscription"),
+    ]
+
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True)
+    manufacturer = models.ForeignKey(
+        Manufacturer,
+        on_delete=models.PROTECT,
+        related_name="license_types"
+    )
+    product_code = models.CharField(max_length=255, blank=True, null=True)
+    ean_code = models.CharField(max_length=255, blank=True, null=True)
+    volume_type = models.CharField(max_length=20, choices=VOLUME_TYPE_CHOICES)
+    license_model = models.CharField(max_length=20, choices=LICENSE_MODEL_CHOICES)
+    purchase_model = models.CharField(max_length=20, choices=PURCHASE_MODEL_CHOICES, blank=True, null=True)
+    description = models.CharField(max_length=255, blank=True, null=True)
+    comments = models.TextField(blank=True, null=True)
+
+    clone_fields = ['manufacturer', 'volume_type', 'license_model', 'purchase_model']
+
+    def __str__(self):
+        return self.name
+
+    def get_absolute_url(self):
+        return reverse("plugins:license_management:licensetype", args=[self.pk])
+
+    class Meta:
+        verbose_name = "License Type"
+        verbose_name_plural = "License Types"
+
 
 
 
@@ -133,48 +178,42 @@ class LicenseAssignment(NetBoxModel):
         if not self.device and not self.virtual_machine:
             raise ValidationError("You must assign the license to either a Device or a Virtual Machine.")
 
-        license = getattr(self, 'license', None)
-        manufacturer = getattr(self, 'manufacturer', None)
+        if self.license:
+            if not self.license.license_type:
+                raise ValidationError("Selected license must be linked to a license type.")
 
-        if license and manufacturer and license.manufacturer != manufacturer:
-            raise ValidationError("Selected license does not belong to the chosen manufacturer.")
+            volume_type = self.license.license_type.volume_type
 
-        if license:
-            self.manufacturer = license.manufacturer
+            self.manufacturer = self.license.manufacturer
 
-        if self.device and not self.device_manufacturer:
-            self.device_manufacturer = self.device.device_type.manufacturer
-
-        if license:
-            volume_type = license.volume_type
             if volume_type == "SINGLE":
                 if self.volume != 1:
                     raise ValidationError("Single licenses can only have a volume of 1.")
-
-                existing_assignments = license.assignments.exclude(pk=self.pk).count()
+                existing_assignments = self.license.assignments.exclude(pk=self.pk).count()
                 if existing_assignments >= 1:
                     raise ValidationError("Single licenses can only be assigned to one entity (Device or VM).")
 
-                    
             elif volume_type == "VOLUME":
                 if self.volume < 1:
                     raise ValidationError("Volume quantity must be at least 1.")
                 total_assigned_volume = (
-                    license.assignments.exclude(pk=self.pk)
+                    self.license.assignments.exclude(pk=self.pk)
                     .aggregate(models.Sum('volume'))['volume__sum'] or 0
                 )
-                if total_assigned_volume + self.volume > license.volume_limit:
+                if total_assigned_volume + self.volume > self.license.volume_limit:
                     raise ValidationError(
-                        f"Exceeds volume limit ({license.volume_limit}). Currently assigned: {total_assigned_volume}."
+                        f"Exceeds volume limit ({self.license.volume_limit}). Currently assigned: {total_assigned_volume}."
                     )
 
+        if self.device and not self.device_manufacturer:
+            self.device_manufacturer = self.device.device_type.manufacturer
 
     clone_fields = [
-            'manufacturer', 'license', 'device', 'virtual_machine', 'description',
-        ]
+        'manufacturer', 'license', 'device', 'virtual_machine', 'description',
+    ]
 
     def __str__(self):
-        return f"{self.license.name} → {self.device or self.virtual_machine} ({self.volume})"
+        return f"{self.license.license_key} → {self.device or self.virtual_machine} ({self.volume})"
 
     def get_absolute_url(self):
         return reverse("plugins:license_management:licenseassignment", args=[self.pk])

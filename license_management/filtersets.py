@@ -1,7 +1,7 @@
 import django_filters
 from django.utils.translation import gettext as _
 from django.db.models import Q
-from .models import License, LicenseAssignment
+from .models import License, LicenseAssignment, LicenseType
 from netbox.filtersets import NetBoxModelFilterSet
 from dcim.models import Manufacturer, Device
 from virtualization.models import VirtualMachine, Cluster
@@ -24,7 +24,7 @@ class LicenseFilterSet(NetBoxModelFilterSet):
 
 
     volume_type = django_filters.ChoiceFilter(
-        choices=License.VOLUME_TYPE_CHOICES,
+        choices=LicenseType.VOLUME_TYPE_CHOICES,
         label="Volume Type"
     )
 
@@ -111,6 +111,80 @@ class LicenseFilterSet(NetBoxModelFilterSet):
             Q(serial_number__icontains=value)
         ).distinct()
 
+class LicenseTypeFilterSet(NetBoxModelFilterSet):
+    """Filterset for License Types."""
+
+    manufacturer_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='manufacturer',
+        queryset=Manufacturer.objects.all(),
+        label="Manufacturer (ID)"
+    )
+
+    manufacturer = django_filters.ModelMultipleChoiceFilter(
+        field_name='manufacturer__slug',
+        queryset=Manufacturer.objects.all(),
+        to_field_name='slug',
+        label="Manufacturer name (slug)"
+    )
+
+    name = django_filters.CharFilter(
+        lookup_expr='icontains',
+        label="Name"
+    )
+
+    slug = django_filters.CharFilter(
+        lookup_expr='icontains',
+        label="Slug"
+    )
+
+    product_code = django_filters.CharFilter(
+        lookup_expr='icontains',
+        label="Product Code"
+    )
+
+    ean_code = django_filters.CharFilter(
+        lookup_expr='icontains',
+        label="EAN Code"
+    )
+
+    volume_type = django_filters.ChoiceFilter(
+        choices=LicenseType.VOLUME_TYPE_CHOICES,
+        label="Volume Type"
+    )
+
+    license_model = django_filters.ChoiceFilter(
+        choices=LicenseType.LICENSE_MODEL_CHOICES,
+        label="License Model"
+    )
+
+    purchase_model = django_filters.ChoiceFilter(
+        choices=LicenseType.PURCHASE_MODEL_CHOICES,
+        label="Purchase Model"
+    )
+
+    class Meta:
+        model = LicenseType
+        fields = [
+            "name",
+            "slug",
+            "manufacturer",
+            "product_code",
+            "ean_code",
+            "volume_type",
+            "license_model",
+            "purchase_model",
+        ]
+
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        return queryset.filter(
+            Q(name__icontains=value) |
+            Q(product_code__icontains=value) |
+            Q(ean_code__icontains=value)
+        ).distinct()
+    
+    
 class LicenseAssignmentFilterSet(NetBoxModelFilterSet):
     """Filterset for License Assignments with comprehensive filtering."""
 

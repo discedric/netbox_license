@@ -1,5 +1,5 @@
 from django import forms
-from .models import License, LicenseAssignment
+from .models import License, LicenseAssignment, LicenseType
 from dcim.models import Manufacturer, Device
 from utilities.forms.fields import CommentField, DynamicModelChoiceField, DynamicModelMultipleChoiceField
 from netbox.forms import NetBoxModelFilterSetForm, NetBoxModelForm
@@ -7,7 +7,9 @@ from .filtersets import LicenseAssignmentFilterSet, LicenseFilterSet
 from virtualization.models import VirtualMachine, Cluster
 from utilities.forms.rendering import FieldSet, TabbedGroups
 from netbox.forms import NetBoxModelImportForm
-from utilities.forms.fields import CSVModelChoiceField, CSVChoiceField
+from utilities.forms.fields import CSVModelChoiceField
+
+from license_management import filtersets
 
 
 class LicenseFilterForm(NetBoxModelFilterSetForm):
@@ -16,12 +18,10 @@ class LicenseFilterForm(NetBoxModelFilterSetForm):
 
     fieldsets = (
         FieldSet('q', name='Search'),
-        FieldSet('manufacturer_id', 'volume_type', 'license_key', 'product_key', 'serial_number', name='License Info'),
+        FieldSet('manufacturer_id', 'license_key', name='License Info'),
         FieldSet('is_parent_license', 'is_child_license', 'parent_license', 'child_license', name='License Relationship'),
         FieldSet('purchase_date_after', 'purchase_date_before', 'expiry_date_after', 'expiry_date_before', name='Dates'),
     )
-
-
 
     manufacturer_id = DynamicModelMultipleChoiceField(
         queryset=Manufacturer.objects.all(),
@@ -55,30 +55,9 @@ class LicenseFilterForm(NetBoxModelFilterSetForm):
         widget=forms.Select(choices=[('', '---------'), (True, 'Yes'), (False, 'No')])
     )
 
-    volume_type = forms.ChoiceField(
-        choices=[('', '---------')] + License.VOLUME_TYPE_CHOICES,
-        required=False,
-        label="Volume Type"
-    )
-
-    name = forms.CharField(
-        required=False,
-        label="Name"
-    )
-
     license_key = forms.CharField(
         required=False,
         label="License Key"
-    )
-
-    product_key = forms.CharField(
-        required=False,
-        label="Product Key"
-    )
-
-    serial_number = forms.CharField(
-        required=False,
-        label="Serial Number"
     )
 
     purchase_date_after = forms.DateField(
@@ -122,57 +101,44 @@ class LicenseImportForm(NetBoxModelImportForm):
         help_text='Parent license key if applicable'
     )
 
-    volume_type = CSVChoiceField(
-        choices=License.VOLUME_TYPE_CHOICES,
-        label='Volume Type',
-        help_text='License volume type'
-    )
-
     class Meta:
         model = License
         fields = [
-            "name", "license_key", "product_key", "serial_number", "description",
+            "license_key", "serial_number", "description",
             "manufacturer", "purchase_date", "expiry_date",
-            "volume_type", "volume_limit", "parent_license"
+            "volume_limit", "parent_license"
         ]
         labels = {
-            "name": "License Name",
             "license_key": "License Key",
-            "product_key": "Product Key",
             "serial_number": "Serial Number",
             "description": "Description",
             "manufacturer": "Manufacturer",
             "purchase_date": "Purchase Date",
             "expiry_date": "Expiry Date",
-            "volume_type": "Volume Type",
             "volume_limit": "Volume Limit",
             "parent_license": "Parent License",
         }
         help_texts = {
-            "name": "Name of the license",
             "license_key": "Unique license key",
-            "product_key": "Product key for activation",
             "serial_number": "Serial number of the license",
             "description": "Additional notes or description",
             "manufacturer": "Manufacturer of the software/license",
             "purchase_date": "Date when the license was purchased",
             "expiry_date": "Expiration date of the license",
-            "volume_type": "Single, volume, or unlimited use",
             "volume_limit": "Number of uses (if volume license)",
             "parent_license": "Link to a parent license if this is a child",
         }
 
     def clean(self):
         super().clean()
-        # You can add any custom validation logic here
 
 
 class LicenseBulkEditForm(forms.ModelForm):
     class Meta:
         model = License
         fields = [
-            "name", "description", "manufacturer", "purchase_date",
-            "expiry_date", "volume_type", "volume_limit", "parent_license",
+            "description", "manufacturer", "purchase_date",
+            "expiry_date", "volume_limit", "parent_license",
         ]
 
 
@@ -199,17 +165,6 @@ class LicenseForm(NetBoxModelForm):
         label="License Key"
     )
 
-    name = forms.CharField(
-        required=True,
-        label="Name"
-    )
-
-    volume_type = forms.ChoiceField(
-        choices=License.VOLUME_TYPE_CHOICES,
-        required=True,
-        label="Volume Type"
-    )
-
     purchase_date = forms.DateField(
         required=False,
         widget=forms.DateInput(attrs={"type": "date"}),
@@ -227,30 +182,94 @@ class LicenseForm(NetBoxModelForm):
     class Meta:
         model = License
         fields = [
-            "manufacturer", "name", "license_key", "product_key", "serial_number", "description",
-            "volume_type", "volume_limit", "parent_license",
+            "manufacturer", "license_key", "serial_number", "description",
+            "volume_limit", "parent_license",
             "purchase_date", "expiry_date", "comment"
         ]
 
-    def clean(self):
-        cleaned_data = super().clean()
-        if not cleaned_data:
-            return cleaned_data
 
-        volume_type = cleaned_data.get("volume_type")
-        volume_limit = cleaned_data.get("volume_limit")
+class LicenseTypeForm(NetBoxModelForm):
+    manufacturer = DynamicModelChoiceField(
+        queryset=Manufacturer.objects.all(),
+        required=True,
+        label="Manufacturer",
+        selector=True,
+        quick_add=True
+    )
 
-        if volume_type == "SINGLE":
-            cleaned_data["volume_limit"] = 1
-        elif volume_type == "UNLIMITED":
-            cleaned_data["volume_limit"] = None
-        elif volume_type == "VOLUME":
-            if volume_limit is None or volume_limit < 2:
-                self.add_error("volume_limit", "Volume licenses require a volume limit of at least 2.")
+    volume_type = forms.ChoiceField(
+        choices=LicenseType.VOLUME_TYPE_CHOICES,
+        required=True,
+        label="Volume Type"
+    )
 
-        return cleaned_data
+    license_model = forms.ChoiceField(
+        choices=LicenseType.LICENSE_MODEL_CHOICES,
+        required=True,
+        label="License Model"
+    )
+
+    purchase_model = forms.ChoiceField(
+        choices=LicenseType.PURCHASE_MODEL_CHOICES,
+        required=True,
+        label="Purchase Model"
+    )
+
+    comment = CommentField()
+
+    class Meta:
+        model = LicenseType
+        fields = [
+            "name",
+            "slug",
+            "manufacturer",
+            "product_code",
+            "ean_code",
+            "volume_type",
+            "license_model",
+            "purchase_model",
+            "description",
+            "comment"
+        ]
 
 
+class LicenseTypeFilterForm(NetBoxModelFilterSetForm):
+    model = LicenseType
+    filterset_class = filtersets.LicenseTypeFilterSet
+
+    fieldsets = (
+        FieldSet('q', name='Search'),
+        FieldSet('manufacturer_id', 'volume_type', 'license_model', 'purchase_model', name='Details'),
+    )
+
+    manufacturer_id = DynamicModelMultipleChoiceField(
+        queryset=Manufacturer.objects.all(),
+        required=False,
+        label="Manufacturer"
+    )
+
+    volume_type = forms.ChoiceField(
+        choices=[('', '---------')] + LicenseType.VOLUME_TYPE_CHOICES,
+        required=False,
+        label="Volume Type"
+    )
+
+    license_model = forms.ChoiceField(
+        choices=[('', '---------')] + LicenseType.LICENSE_MODEL_CHOICES,
+        required=False,
+        label="License Model"
+    )
+
+    purchase_model = forms.ChoiceField(
+        choices=[('', '---------')] + LicenseType.PURCHASE_MODEL_CHOICES,
+        required=False,
+        label="Purchase Model"
+    )
+
+    q = forms.CharField(
+        required=False,
+        label='Search'
+    )
 
 class LicenseAssignmentForm(NetBoxModelForm):
     manufacturer = DynamicModelChoiceField(
@@ -358,7 +377,43 @@ class LicenseAssignmentForm(NetBoxModelForm):
             assignment.save()
 
         return assignment
+    
+class LicenseTypeImportForm(NetBoxModelImportForm):
+    manufacturer = CSVModelChoiceField(
+        queryset=Manufacturer.objects.all(),
+        to_field_name='name',
+        label='Manufacturer',
+        help_text='The license type manufacturer'
+    )
 
+    class Meta:
+        model = LicenseType
+        fields = [
+            "name", "slug", "manufacturer", "product_code", "ean_code",
+            "volume_type", "license_model", "purchase_model", "description"
+        ]
+        labels = {
+            "name": "Name",
+            "slug": "Slug",
+            "manufacturer": "Manufacturer",
+            "product_code": "Product Code",
+            "ean_code": "EAN Code",
+            "volume_type": "Volume Type",
+            "license_model": "License Model",
+            "purchase_model": "Purchase Model",
+            "description": "Description",
+        }
+        help_texts = {
+            "name": "Name of the license type",
+            "slug": "URL-friendly identifier",
+            "manufacturer": "Manufacturer of the license type",
+            "product_code": "Internal or external product code",
+            "ean_code": "European Article Number",
+            "volume_type": "Type of volume: single, volume, or unlimited",
+            "license_model": "Base license or expansion pack",
+            "purchase_model": "Peripheral or subscription",
+            "description": "Optional notes",
+        }
 
 class LicenseAssignmentImportForm(NetBoxModelImportForm):
     manufacturer = CSVModelChoiceField(
@@ -421,6 +476,7 @@ class LicenseAssignmentImportForm(NetBoxModelImportForm):
 
         if device and virtual_machine:
             raise forms.ValidationError("A license can only be assigned to a Device or a Virtual Machine, not both.")
+
 
 class LicenseAssignmentBulkEditForm(forms.ModelForm):
     class Meta:

@@ -10,6 +10,11 @@ urlpatterns = [
     path('licenses/<int:pk>/changelog/', views.LicenseChangeLogView.as_view(), name='license_changelog'),
     path('licenses/<int:pk>/journal/', views.LicenseJournalView.as_view(), name='license_journal'),
 
+    # License type
+    path('types/', include(get_model_urls('license_management', 'licensetype', detail=False))),
+    path('types/<int:pk>/', include(get_model_urls('license_management', 'licensetype'))),
+    path('types/<int:pk>/changelog/', views.LicensetypeChangeLogView.as_view(), name='licensetype_changelog'),
+    path('types/<int:pk>/journal/', views.LicensetypeJournalView.as_view(), name='licensetype_journal'),
     # License Assignments 
     path('assignments/',include(get_model_urls('license_management', 'licenseassignment',detail=False))),
     path('assignments/<int:pk>/',include(get_model_urls('license_management', 'licenseassignment'))),

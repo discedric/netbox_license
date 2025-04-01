@@ -32,6 +32,22 @@ license_assignments_buttons = [
     ),
 ]
 
+# License Type tab buttons
+license_type_buttons = [
+    PluginMenuButton(
+        link='plugins:license_management:licensetype_add',
+        title='Add License Type',
+        icon_class='mdi mdi-plus-thick',
+        permissions=["license_management.add_licensetype"],
+    ),
+    PluginMenuButton(
+        link='plugins:license_management:licensetype_bulk_import',
+        title='Import License Types',
+        icon_class='mdi mdi-upload',
+        permissions=["license_management.add_licensetype"],
+    ),
+]
+
 # Menu items
 license_items = [
     PluginMenuItem(
@@ -39,6 +55,12 @@ license_items = [
         link_text='Licenses',
         permissions=["license_management.view_license"],
         buttons=license_buttons
+    ),
+    PluginMenuItem(
+        link='plugins:license_management:licensetype_list',
+        link_text='License Types',
+        permissions=["license_management.view_licensetype"],
+        buttons=license_type_buttons
     ),
     PluginMenuItem(
         link='plugins:license_management:licenseassignment_list',
