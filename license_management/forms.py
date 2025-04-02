@@ -1,7 +1,7 @@
 from django import forms
 from .models import License, LicenseAssignment, LicenseType
 from dcim.models import Manufacturer, Device
-from utilities.forms.fields import CommentField, DynamicModelChoiceField, DynamicModelMultipleChoiceField
+from utilities.forms.fields import CommentField, DynamicModelChoiceField, DynamicModelMultipleChoiceField, SlugField
 from netbox.forms import NetBoxModelFilterSetForm, NetBoxModelForm
 from .filtersets import LicenseAssignmentFilterSet, LicenseFilterSet
 from virtualization.models import VirtualMachine, Cluster
@@ -151,6 +151,16 @@ class LicenseForm(NetBoxModelForm):
         quick_add=True
     )
 
+    license_type = DynamicModelChoiceField(
+        queryset=LicenseType.objects.all(),
+        required=True,
+        label="License Type",
+        help_text="Select the type of license.",
+        selector=True,
+        quick_add=True,
+        query_params={'manufacturer_id': '$manufacturer'}
+    )
+
     parent_license = DynamicModelChoiceField(
         queryset=License.objects.all(),
         required=False,
@@ -182,7 +192,7 @@ class LicenseForm(NetBoxModelForm):
     class Meta:
         model = License
         fields = [
-            "manufacturer", "license_key", "serial_number", "description",
+            "manufacturer","license_type", "license_key", "serial_number", "description",
             "volume_limit", "parent_license",
             "purchase_date", "expiry_date", "comment"
         ]
@@ -209,13 +219,28 @@ class LicenseTypeForm(NetBoxModelForm):
         label="License Model"
     )
 
+    base_license = DynamicModelChoiceField(
+        queryset=LicenseType.objects.filter(license_model="BASE"),
+        required=False,
+        label="Base License",
+        help_text="Select a base license if this is an expansion pack.",
+        selector=True
+    )
+
     purchase_model = forms.ChoiceField(
         choices=LicenseType.PURCHASE_MODEL_CHOICES,
         required=True,
         label="Purchase Model"
     )
 
-    comment = CommentField()
+    slug = SlugField(
+        required=True,
+        label="Slug",
+        help_text="URL-friendly identifier",
+        slug_source="name",
+    )
+
+    comments = CommentField()
 
     class Meta:
         model = LicenseType
@@ -227,10 +252,35 @@ class LicenseTypeForm(NetBoxModelForm):
             "ean_code",
             "volume_type",
             "license_model",
+            "base_license",
             "purchase_model",
             "description",
-            "comment"
+            "comments"
         ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        license_model = self.initial.get("license_model") or self.data.get("license_model")
+        if license_model == "EXPANSION":
+            self.fields["base_license"].required = True
+        else:
+            self.fields["base_license"].required = False
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        if not cleaned_data:
+            return cleaned_data
+
+        license_model = cleaned_data.get("license_model")
+        base_license = cleaned_data.get("base_license")
+
+        if license_model == "EXPANSION" and not base_license:
+            self.add_error("base_license", "You must select a base license when the license model is set to 'Expansion Pack'.")
+
+        return cleaned_data
+
 
 
 class LicenseAssignmentForm(NetBoxModelForm):

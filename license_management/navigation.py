@@ -50,18 +50,21 @@ license_type_buttons = [
 
 # Menu items
 license_items = [
-    PluginMenuItem(
-        link='plugins:license_management:license_list',
-        link_text='Licenses',
-        permissions=["license_management.view_license"],
-        buttons=license_buttons
-    ),
+    
     PluginMenuItem(
         link='plugins:license_management:licensetype_list',
         link_text='License Types',
         permissions=["license_management.view_licensetype"],
         buttons=license_type_buttons
     ),
+
+    PluginMenuItem(
+        link='plugins:license_management:license_list',
+        link_text='Licenses',
+        permissions=["license_management.view_license"],
+        buttons=license_buttons
+    ),
+    
     PluginMenuItem(
         link='plugins:license_management:licenseassignment_list',
         link_text='License Assignments',
