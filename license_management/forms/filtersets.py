@@ -4,7 +4,7 @@ from utilities.forms.fields import DynamicModelChoiceField, DynamicModelMultiple
 from utilities.forms.rendering import FieldSet
 from dcim.models import Manufacturer, Device
 from virtualization.models import VirtualMachine, Cluster
-from license_management.models import License, LicenseType, LicenseAssignment, LicenseModel
+from license_management.models import License, LicenseType, LicenseAssignment
 from license_management import filtersets
 
 
@@ -102,11 +102,12 @@ class LicenseTypeFilterForm(NetBoxModelFilterSetForm):
         label="Volume Type"
     )
 
-    license_model = DynamicModelMultipleChoiceField(
-        queryset=LicenseModel.objects.all(),
-        required=False,
+    license_model = forms.ChoiceField(
+        choices=LicenseType.LICENSE_MODEL_CHOICES,
+        required=True,
         label="License Model"
     )
+
 
     purchase_model = forms.ChoiceField(
         choices=[('', '---------')] + LicenseType.PURCHASE_MODEL_CHOICES,

@@ -3,7 +3,7 @@ from netbox.forms import NetBoxModelImportForm
 from utilities.forms.fields import CSVModelChoiceField
 from dcim.models import Manufacturer, Device
 from virtualization.models import VirtualMachine
-from license_management.models import License, LicenseType, LicenseAssignment, LicenseModel
+from license_management.models import License, LicenseType, LicenseAssignment
 
 
 class LicenseImportForm(NetBoxModelImportForm):

@@ -7,18 +7,6 @@ from django.urls import reverse
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
-class LicenseModel(NetBoxModel):
-    name = models.CharField(max_length=50, unique=True)
-    slug = models.SlugField(unique=True)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name = "License Model"
-        verbose_name_plural = "License Models"
-
-
 class LicenseType(NetBoxModel):
     VOLUME_TYPE_CHOICES = [
         ("SINGLE", "Single License (1 device)"),
@@ -32,25 +20,54 @@ class LicenseType(NetBoxModel):
     ]
 
     name = models.CharField(max_length=255)
+
     slug = models.SlugField(unique=True)
+    
     manufacturer = models.ForeignKey(
         Manufacturer,
         on_delete=models.PROTECT,
         related_name="license_types"
     )
+
     product_code = models.CharField(max_length=255, blank=True, null=True)
+
     ean_code = models.CharField(max_length=255, blank=True, null=True)
+
     volume_type = models.CharField(max_length=20, choices=VOLUME_TYPE_CHOICES)
-    license_model = models.ForeignKey(
-        LicenseModel,
-        on_delete=models.PROTECT,
-        related_name="license_types"
+
+    LICENSE_MODEL_CHOICES = [
+        ("BASE", "Base License"),
+        ("EXPANSION", "Expansion Pack"),
+    ]
+
+    license_model = models.CharField(
+        max_length=20,
+        choices=LICENSE_MODEL_CHOICES,
+        default="BASE"
+    )
+    base_license = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="expansions",
+        help_text="Only for expansion licenses. Must reference a base license."
     )
     purchase_model = models.CharField(max_length=20, choices=PURCHASE_MODEL_CHOICES, blank=True, null=True)
     description = models.CharField(max_length=255, blank=True, null=True)
     comments = models.TextField(blank=True, null=True)
 
     clone_fields = ['manufacturer', 'volume_type', 'license_model', 'purchase_model']
+
+    def clean(self):
+        if self.license_model and self.license_model.slug == "expansion":
+            if not self.base_license:
+                raise ValidationError("An Expansion license type must reference a Base license.")
+            if self.base_license.license_model.slug != "base":
+                raise ValidationError("Base License must be of type 'base'.")
+        else:
+            if self.base_license is not None:
+                raise ValidationError("Only Expansion licenses can reference a base license.")
 
     def __str__(self):
         return self.name

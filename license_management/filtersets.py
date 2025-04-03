@@ -1,7 +1,7 @@
 import django_filters
 from django.utils.translation import gettext as _
 from django.db.models import Q
-from .models import License, LicenseAssignment, LicenseType, LicenseModel
+from .models import License, LicenseAssignment, LicenseType
 from netbox.filtersets import NetBoxModelFilterSet
 from dcim.models import Manufacturer, Device
 from virtualization.models import VirtualMachine, Cluster

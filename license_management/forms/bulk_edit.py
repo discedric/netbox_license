@@ -1,5 +1,5 @@
 from django import forms
-from license_management.models import License, LicenseType, LicenseAssignment, LicenseModel
+from license_management.models import License, LicenseType, LicenseAssignment
 
 class LicenseBulkEditForm(forms.ModelForm):
     class Meta:

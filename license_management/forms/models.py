@@ -4,7 +4,7 @@ from utilities.forms.fields import DynamicModelChoiceField, CommentField, SlugFi
 from utilities.forms.rendering import FieldSet, TabbedGroups
 from dcim.models import Manufacturer, Device
 from virtualization.models import VirtualMachine
-from license_management.models import License, LicenseType, LicenseAssignment, LicenseModel
+from license_management.models import License, LicenseType, LicenseAssignment
 
 __all__ = (
     'LicenseForm',
@@ -71,8 +71,8 @@ class LicenseTypeForm(NetBoxModelForm):
         label="Volume Type"
     )
 
-    license_model = forms.ModelChoiceField(
-        queryset=LicenseModel.objects.all(),
+    license_model = forms.ChoiceField(
+        choices=LicenseType.LICENSE_MODEL_CHOICES,
         required=True,
         label="License Model"
     )
@@ -111,24 +111,17 @@ class LicenseTypeForm(NetBoxModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        license_model_id = self.data.get("license_model") or self.initial.get("license_model")
-        if license_model_id:
-            try:
-                selected_license_model = LicenseModel.objects.get(pk=license_model_id)
-                if selected_license_model.slug == "expansion":
-                    self.fields["base_license"].queryset = LicenseType.objects.filter(
-                        license_model__slug="base"
-                    )
-                    self.fields["base_license"].required = True
-                else:
-                    self.fields["base_license"].queryset = LicenseType.objects.none()
-                    self.fields["base_license"].required = False
-            except (LicenseModel.DoesNotExist, ValueError):
-                self.fields["base_license"].queryset = LicenseType.objects.none()
-                self.fields["base_license"].required = False
+        license_model_value = self.data.get("license_model") or self.initial.get("license_model")
+
+        if license_model_value == "EXPANSION":
+            self.fields["base_license"].queryset = LicenseType.objects.filter(
+                license_model="BASE"
+            )
+            self.fields["base_license"].required = True
         else:
             self.fields["base_license"].queryset = LicenseType.objects.none()
             self.fields["base_license"].required = False
+
 
     def clean(self):
         cleaned_data = super().clean()
