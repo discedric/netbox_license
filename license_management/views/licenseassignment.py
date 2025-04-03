@@ -5,6 +5,10 @@ from virtualization.models import VirtualMachine
 from .. import filtersets, tables, forms
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from ..forms.models import LicenseAssignmentForm
+from ..forms.bulk_edit import LicenseAssignmentBulkEditForm
+from ..forms.bulk_import import LicenseAssignmentImportForm
+from ..forms.filtersets import LicenseAssignmentFilterForm
 
 
 __all__ = (
@@ -48,14 +52,14 @@ class LicenseAssignmentListView(generic.ObjectListView):
     queryset = LicenseAssignment.objects.prefetch_related("license", "device")
     table = tables.LicenseAssignmentTable
     filterset = filtersets.LicenseAssignmentFilterSet
-    filterset_form = forms.LicenseAssignmentFilterForm 
+    filterset_form = LicenseAssignmentFilterForm 
 
 @register_model_view(LicenseAssignment, 'edit')
 @register_model_view(LicenseAssignment, 'add', detail=False)
 class LicenseAssignmentEditView(generic.ObjectEditView):
     """View to create or edit a license assignment."""
     queryset = LicenseAssignment.objects.all()
-    form = forms.LicenseAssignmentForm
+    form = LicenseAssignmentForm
     default_return_url = 'plugins:license_management:licenseassignment_list'
 
 @register_model_view(LicenseAssignment, 'delete')
@@ -69,7 +73,7 @@ class LicenseAssignmentDeleteView(generic.ObjectDeleteView):
 class LicenseAssignmentBulkImportView(generic.BulkImportView):
     """View for bulk importing license assignments."""
     queryset = LicenseAssignment.objects.all()
-    model_form = forms.LicenseAssignmentImportForm
+    model_form = LicenseAssignmentImportForm
 
 @register_model_view(LicenseAssignment, 'bulk_edit', path='edit', detail=False)
 class LicenseAssignmentBulkEditView(generic.BulkEditView):
@@ -77,7 +81,7 @@ class LicenseAssignmentBulkEditView(generic.BulkEditView):
     queryset = LicenseAssignment.objects.all()
     filterset = filtersets.LicenseAssignmentFilterSet
     table = tables.LicenseAssignmentTable
-    form = forms.LicenseAssignmentBulkEditForm
+    form = LicenseAssignmentBulkEditForm
 
 @register_model_view(LicenseAssignment, 'bulk_delete', path='delete', detail=False)
 class LicenseAssignmentBulkDeleteView(generic.BulkDeleteView):

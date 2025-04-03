@@ -1,8 +1,33 @@
 from license_management.api.serializers.licenses import LicenseSerializer
 from netbox.views import generic
 from utilities.views import register_model_view
+
 from ..models import License
-from .. import filtersets, tables, forms
+from .. import filtersets, tables
+
+from ..forms.filtersets import (
+    LicenseFilterForm,
+    LicenseTypeFilterForm,
+    LicenseAssignmentFilterForm
+)
+
+from ..forms.bulk_edit import (
+    LicenseBulkEditForm,
+    LicenseTypeBulkEditForm,
+    LicenseAssignmentBulkEditForm
+)
+
+from ..forms.bulk_import import (
+    LicenseImportForm,
+    LicenseTypeImportForm,
+    LicenseAssignmentImportForm
+)
+
+from ..forms.models import (
+    LicenseForm,
+    LicenseTypeForm,
+    LicenseAssignmentForm
+)
 
 __all__ = (
     'LicenseView',
@@ -50,7 +75,7 @@ class LicenseListView(generic.ObjectListView):
     queryset = License.objects.all()
     table = tables.LicenseTable
     filterset = filtersets.LicenseFilterSet
-    filterset_form = forms.LicenseFilterForm
+    filterset_form = LicenseFilterForm
 
 
 @register_model_view(License, 'edit')
@@ -58,7 +83,7 @@ class LicenseListView(generic.ObjectListView):
 class LicenseEditView(generic.ObjectEditView):
     """View for creating or editing a license."""
     queryset = License.objects.all()
-    form = forms.LicenseForm
+    form = LicenseForm
     default_return_url = 'plugins:license_management:license_list'
 
 
@@ -72,7 +97,7 @@ class LicenseDeleteView(generic.ObjectDeleteView):
 class LicenseBulkImportView(generic.BulkImportView):
     """View for bulk importing licenses."""
     queryset = License.objects.all()
-    model_form = forms.LicenseImportForm
+    model_form = LicenseImportForm
 
 
 @register_model_view(License, 'bulk_edit', path='edit', detail=False)
@@ -81,7 +106,7 @@ class LicenseBulkEditView(generic.BulkEditView):
     queryset = License.objects.all()
     filterset = filtersets.LicenseFilterSet
     table = tables.LicenseTable
-    form = forms.LicenseBulkEditForm
+    form = LicenseBulkEditForm
     default_return_url = 'plugins:license_management:license_list'
 
 

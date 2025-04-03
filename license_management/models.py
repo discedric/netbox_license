@@ -7,11 +7,63 @@ from django.urls import reverse
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
+class LicenseModel(NetBoxModel):
+    name = models.CharField(max_length=50, unique=True)
+    slug = models.SlugField(unique=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "License Model"
+        verbose_name_plural = "License Models"
+
+
+class LicenseType(NetBoxModel):
+    VOLUME_TYPE_CHOICES = [
+        ("SINGLE", "Single License (1 device)"),
+        ("VOLUME", "Volume License (multiple devices)"),
+        ("UNLIMITED", "Unlimited License"),
+    ]
+
+    PURCHASE_MODEL_CHOICES = [
+        ("PERIPHERAL", "Peripheral"),
+        ("SUBSCRIPTION", "Subscription"),
+    ]
+
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True)
+    manufacturer = models.ForeignKey(
+        Manufacturer,
+        on_delete=models.PROTECT,
+        related_name="license_types"
+    )
+    product_code = models.CharField(max_length=255, blank=True, null=True)
+    ean_code = models.CharField(max_length=255, blank=True, null=True)
+    volume_type = models.CharField(max_length=20, choices=VOLUME_TYPE_CHOICES)
+    license_model = models.ForeignKey(
+        LicenseModel,
+        on_delete=models.PROTECT,
+        related_name="license_types"
+    )
+    purchase_model = models.CharField(max_length=20, choices=PURCHASE_MODEL_CHOICES, blank=True, null=True)
+    description = models.CharField(max_length=255, blank=True, null=True)
+    comments = models.TextField(blank=True, null=True)
+
+    clone_fields = ['manufacturer', 'volume_type', 'license_model', 'purchase_model']
+
+    def __str__(self):
+        return self.name
+
+    def get_absolute_url(self):
+        return reverse("plugins:license_management:licensetype", args=[self.pk])
+
+    class Meta:
+        verbose_name = "License Type"
+        verbose_name_plural = "License Types"
 
 
 class License(NetBoxModel):
-    """Represents a specific license key instance that can be assigned."""
-
     license_key = models.CharField(max_length=255, unique=True)
     serial_number = models.CharField(max_length=255, blank=True, null=True)
     description = models.CharField(max_length=255, blank=True, null=True)
@@ -21,7 +73,6 @@ class License(NetBoxModel):
         on_delete=models.PROTECT,
         related_name="licenses"
     )
-
 
     manufacturer = models.ForeignKey(
         Manufacturer,
@@ -88,55 +139,6 @@ class License(NetBoxModel):
     class Meta:
         verbose_name = "License"
         verbose_name_plural = "Licenses"
-
-
-class LicenseType(NetBoxModel):
-    """Represents a general definition of a license type (e.g. Windows 10 Pro Volume License)."""
-
-    VOLUME_TYPE_CHOICES = [
-        ("SINGLE", "Single License (1 device)"),
-        ("VOLUME", "Volume License (multiple devices)"),
-        ("UNLIMITED", "Unlimited License"),
-    ]
-
-    LICENSE_MODEL_CHOICES = [
-        ("BASE", "Base License"),
-        ("EXPANSION", "Expansion Pack"),
-    ]
-
-    PURCHASE_MODEL_CHOICES = [
-        ("PERIPHERAL", "Peripheral"),
-        ("SUBSCRIPTION", "Subscription"),
-    ]
-
-    name = models.CharField(max_length=255)
-    slug = models.SlugField(unique=True)
-    manufacturer = models.ForeignKey(
-        Manufacturer,
-        on_delete=models.PROTECT,
-        related_name="license_types"
-    )
-    product_code = models.CharField(max_length=255, blank=True, null=True)
-    ean_code = models.CharField(max_length=255, blank=True, null=True)
-    volume_type = models.CharField(max_length=20, choices=VOLUME_TYPE_CHOICES)
-    license_model = models.CharField(max_length=20, choices=LICENSE_MODEL_CHOICES)
-    purchase_model = models.CharField(max_length=20, choices=PURCHASE_MODEL_CHOICES, blank=True, null=True)
-    description = models.CharField(max_length=255, blank=True, null=True)
-    comments = models.TextField(blank=True, null=True)
-
-    clone_fields = ['manufacturer', 'volume_type', 'license_model', 'purchase_model']
-
-    def __str__(self):
-        return self.name
-
-    def get_absolute_url(self):
-        return reverse("plugins:license_management:licensetype", args=[self.pk])
-
-    class Meta:
-        verbose_name = "License Type"
-        verbose_name_plural = "License Types"
-
-
 
 
 class LicenseAssignment(NetBoxModel):

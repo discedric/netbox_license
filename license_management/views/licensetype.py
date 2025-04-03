@@ -2,6 +2,10 @@ from netbox.views import generic
 from utilities.views import register_model_view
 from ..models import LicenseType
 from .. import filtersets, tables, forms
+from ..forms.filtersets import LicenseTypeFilterForm
+from ..forms.models import LicenseTypeForm
+from ..forms.bulk_edit import LicenseTypeBulkEditForm
+from ..forms.bulk_import import LicenseTypeImportForm
 
 __all__ = (
     'LicenseTypeView',
@@ -42,14 +46,14 @@ class LicenseTypeListView(generic.ObjectListView):
     queryset = LicenseType.objects.all()
     table = tables.LicenseTypeTable
     filterset = filtersets.LicenseTypeFilterSet
-    filterset_form = forms.LicenseTypeFilterForm
+    filterset_form = LicenseTypeFilterForm
 
 
 @register_model_view(LicenseType, 'add', detail=False)
 @register_model_view(LicenseType, 'edit')
 class LicenseTypeEditView(generic.ObjectEditView):
     queryset = LicenseType.objects.all()
-    form = forms.LicenseTypeForm
+    form = LicenseTypeForm
     default_return_url = 'plugins:license_management:licensetype_list'
 
 
@@ -61,7 +65,7 @@ class LicenseTypeDeleteView(generic.ObjectDeleteView):
 @register_model_view(LicenseType, 'bulk_import', path='import', detail=False)
 class LicenseTypeBulkImportView(generic.BulkImportView):
     queryset = LicenseType.objects.all()
-    model_form = forms.LicenseTypeImportForm
+    model_form = LicenseTypeImportForm
 
 
 @register_model_view(LicenseType, 'bulk_edit', path='edit', detail=False)
@@ -69,7 +73,7 @@ class LicenseTypeBulkEditView(generic.BulkEditView):
     queryset = LicenseType.objects.all()
     filterset = filtersets.LicenseTypeFilterSet
     table = tables.LicenseTypeTable
-    form = forms.LicenseTypeBulkEditForm
+    form = LicenseTypeBulkEditForm
     default_return_url = 'plugins:license_management:licensetype_list'
 
 

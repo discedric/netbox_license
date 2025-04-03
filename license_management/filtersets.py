@@ -1,15 +1,13 @@
 import django_filters
 from django.utils.translation import gettext as _
 from django.db.models import Q
-from .models import License, LicenseAssignment, LicenseType
+from .models import License, LicenseAssignment, LicenseType, LicenseModel
 from netbox.filtersets import NetBoxModelFilterSet
 from dcim.models import Manufacturer, Device
 from virtualization.models import VirtualMachine, Cluster
 
 
 class LicenseFilterSet(NetBoxModelFilterSet):
-    """Filterset for Software Licenses with enhanced search capability."""
-
     manufacturer_id = django_filters.ModelMultipleChoiceFilter(
         field_name='manufacturer',
         queryset=Manufacturer.objects.all(),
@@ -21,7 +19,6 @@ class LicenseFilterSet(NetBoxModelFilterSet):
         to_field_name='slug',
         label=_('Manufacturer name (slug)'),
     )
-
 
     volume_type = django_filters.ChoiceFilter(
         choices=LicenseType.VOLUME_TYPE_CHOICES,
@@ -38,11 +35,6 @@ class LicenseFilterSet(NetBoxModelFilterSet):
         label="License Key"
     )
 
-    product_key = django_filters.CharFilter(
-        lookup_expr='icontains',
-        label="Product Key"
-    )
-
     serial_number = django_filters.CharFilter(
         lookup_expr='icontains',
         label="Serial Number"
@@ -54,7 +46,7 @@ class LicenseFilterSet(NetBoxModelFilterSet):
     )
 
     child_license = django_filters.ModelMultipleChoiceFilter(
-        field_name='sub_licenses',  
+        field_name='sub_licenses',
         queryset=License.objects.exclude(parent_license__isnull=True),
         label="Child Licenses"
     )
@@ -71,29 +63,15 @@ class LicenseFilterSet(NetBoxModelFilterSet):
         label='Is Child License'
     )
 
-    purchase_date = django_filters.DateFromToRangeFilter(
-        label="Purchase Date (Between)"
-    )
-
-    expiry_date = django_filters.DateFromToRangeFilter(
-        label="Expiry Date (Between)"
-    )
+    purchase_date = django_filters.DateFromToRangeFilter(label="Purchase Date (Between)")
+    expiry_date = django_filters.DateFromToRangeFilter(label="Expiry Date (Between)")
 
     class Meta:
         model = License
         fields = [
-            "license_key",
-            "product_key",
-            "serial_number",
-            "name",
-            "manufacturer",
-            "volume_type",
-            "purchase_date",
-            "expiry_date",
-            "parent_license",
-            "child_license",
-            "is_parent_license",
-            "is_child_license",
+            "license_key", "serial_number", "name", "manufacturer", "volume_type",
+            "purchase_date", "expiry_date", "parent_license", "child_license",
+            "is_parent_license", "is_child_license",
         ]
 
     def filter_is_parent_license(self, queryset, name, value):
@@ -107,13 +85,11 @@ class LicenseFilterSet(NetBoxModelFilterSet):
         return queryset.filter(
             Q(name__icontains=value) |
             Q(license_key__icontains=value) |
-            Q(product_key__icontains=value) |
             Q(serial_number__icontains=value)
         ).distinct()
 
-class LicenseTypeFilterSet(NetBoxModelFilterSet):
-    """Filterset for License Types."""
 
+class LicenseTypeFilterSet(NetBoxModelFilterSet):
     manufacturer_id = django_filters.ModelMultipleChoiceFilter(
         field_name='manufacturer',
         queryset=Manufacturer.objects.all(),
@@ -127,52 +103,31 @@ class LicenseTypeFilterSet(NetBoxModelFilterSet):
         label="Manufacturer name (slug)"
     )
 
-    name = django_filters.CharFilter(
-        lookup_expr='icontains',
-        label="Name"
+    license_model_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='license_model',
+        queryset=LicenseModel.objects.all(),
+        label="License Model (ID)"
     )
 
-    slug = django_filters.CharFilter(
-        lookup_expr='icontains',
-        label="Slug"
+    license_model = django_filters.ModelMultipleChoiceFilter(
+        field_name='license_model__slug',
+        queryset=LicenseModel.objects.all(),
+        to_field_name='slug',
+        label="License Model (slug)"
     )
 
-    product_code = django_filters.CharFilter(
-        lookup_expr='icontains',
-        label="Product Code"
-    )
-
-    ean_code = django_filters.CharFilter(
-        lookup_expr='icontains',
-        label="EAN Code"
-    )
-
-    volume_type = django_filters.ChoiceFilter(
-        choices=LicenseType.VOLUME_TYPE_CHOICES,
-        label="Volume Type"
-    )
-
-    license_model = django_filters.ChoiceFilter(
-        choices=LicenseType.LICENSE_MODEL_CHOICES,
-        label="License Model"
-    )
-
-    purchase_model = django_filters.ChoiceFilter(
-        choices=LicenseType.PURCHASE_MODEL_CHOICES,
-        label="Purchase Model"
-    )
+    name = django_filters.CharFilter(lookup_expr='icontains', label="Name")
+    slug = django_filters.CharFilter(lookup_expr='icontains', label="Slug")
+    product_code = django_filters.CharFilter(lookup_expr='icontains', label="Product Code")
+    ean_code = django_filters.CharFilter(lookup_expr='icontains', label="EAN Code")
+    volume_type = django_filters.ChoiceFilter(choices=LicenseType.VOLUME_TYPE_CHOICES, label="Volume Type")
+    purchase_model = django_filters.ChoiceFilter(choices=LicenseType.PURCHASE_MODEL_CHOICES, label="Purchase Model")
 
     class Meta:
         model = LicenseType
         fields = [
-            "name",
-            "slug",
-            "manufacturer",
-            "product_code",
-            "ean_code",
-            "volume_type",
-            "license_model",
-            "purchase_model",
+            "name", "slug", "manufacturer", "product_code", "ean_code",
+            "volume_type", "license_model", "purchase_model",
         ]
 
     def search(self, queryset, name, value):
