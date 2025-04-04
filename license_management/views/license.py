@@ -1,5 +1,6 @@
 from license_management.api.serializers.licenses import LicenseSerializer
 from netbox.views import generic
+from datetime import date
 from utilities.views import register_model_view
 
 from ..models import License
@@ -46,9 +47,11 @@ class LicenseView(generic.ObjectView):
     """View for displaying a single License"""
     queryset = License.objects.all()
 
-    def get_extra_content(self, request, instance):
-        context = super().get_extra_content(request, instance)
-        return context
+    def get_extra_context(self, request, instance):
+        return {
+            "expiry_progress": instance.get_expiry_progress()
+        }
+
 
 
 class LicenseChangeLogView(generic.ObjectChangeLogView):

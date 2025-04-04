@@ -78,11 +78,12 @@ class LicenseTypeForm(NetBoxModelForm):
     )
 
     base_license = DynamicModelChoiceField(
-        queryset=LicenseType.objects.none(),
+        queryset=LicenseType.objects.filter(license_model="BASE"),
         required=False,
         label="Base License",
         help_text="Select a base license if this is an expansion pack.",
-        selector=True
+        selector=True,
+        query_params={"license_model": "BASE"}  # 💡 Filters API call
     )
 
     purchase_model = forms.ChoiceField(
@@ -111,30 +112,30 @@ class LicenseTypeForm(NetBoxModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        license_model_value = self.data.get("license_model") or self.initial.get("license_model")
+        license_model_value = (
+            self.data.get("license_model") or
+            self.initial.get("license_model") or
+            getattr(self.instance, "license_model", None)
+        )
 
         if license_model_value == "EXPANSION":
-            self.fields["base_license"].queryset = LicenseType.objects.filter(
-                license_model="BASE"
-            )
             self.fields["base_license"].required = True
         else:
             self.fields["base_license"].queryset = LicenseType.objects.none()
             self.fields["base_license"].required = False
 
-
     def clean(self):
         cleaned_data = super().clean()
+        if not cleaned_data:
+            return cleaned_data
 
         license_model = cleaned_data.get("license_model")
         base_license = cleaned_data.get("base_license")
 
-        if license_model and license_model.slug == "expansion":
-            if not base_license:
-                self.add_error("base_license", "You must select a base license when the license model is set to 'Expansion Pack'.")
-        elif license_model and license_model.slug == "base":
-            if base_license:
-                self.add_error("base_license", "Base licenses cannot reference another base license.")
+        if license_model == "EXPANSION" and not base_license:
+            self.add_error("base_license", "You must select a base license when the license model is set to 'Expansion Pack'.")
+        elif license_model == "BASE" and base_license:
+            self.add_error("base_license", "Base licenses cannot reference another base license.")
 
         return cleaned_data
 
@@ -208,6 +209,9 @@ class LicenseAssignmentForm(NetBoxModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+
+        if not cleaned_data:
+            return cleaned_data  
 
         device = cleaned_data.get("device")
         virtual_machine = cleaned_data.get("virtual_machine")

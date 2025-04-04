@@ -22,14 +22,15 @@ class LicenseTable(NetBoxTable):
     volume_type = tables.Column(verbose_name="Volume Type", empty_values=())
 
     is_parent_license = tables.Column(
-        verbose_name='Parent?',
+        verbose_name='Parent',
         empty_values=()
     )
 
     is_child_license = tables.Column(
-        verbose_name='Child?',
+        verbose_name='Child',
         empty_values=()
     )
+    
 
     assigned_count = tables.Column(empty_values=(), verbose_name="Assigned")
 

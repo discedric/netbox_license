@@ -67,12 +67,11 @@ class LicenseTypeImportForm(NetBoxModelImportForm):
         help_text='The license type manufacturer'
     )
 
-    license_model = CSVModelChoiceField(
-        queryset=LicenseModel.objects.all(),
-        to_field_name='slug',
-        label='License Model',
-        help_text='Base license or expansion pack (slug)'
-    )
+    license_model = forms.ChoiceField(
+    choices=LicenseType.LICENSE_MODEL_CHOICES,
+    label='License Model',
+    help_text='Base license or expansion pack'
+)
 
     class Meta:
         model = LicenseType

@@ -103,17 +103,9 @@ class LicenseTypeFilterSet(NetBoxModelFilterSet):
         label="Manufacturer name (slug)"
     )
 
-    license_model_id = django_filters.ModelMultipleChoiceFilter(
-        field_name='license_model',
-        queryset=LicenseModel.objects.all(),
-        label="License Model (ID)"
-    )
-
-    license_model = django_filters.ModelMultipleChoiceFilter(
-        field_name='license_model__slug',
-        queryset=LicenseModel.objects.all(),
-        to_field_name='slug',
-        label="License Model (slug)"
+    license_model = django_filters.ChoiceFilter(
+        choices=LicenseType.LICENSE_MODEL_CHOICES,
+        label="License Model"
     )
 
     name = django_filters.CharFilter(lookup_expr='icontains', label="Name")

@@ -46,6 +46,12 @@
           <th scope="row">License Model</th>
           <td>{{ object.get_license_model_display }}</td>
         </tr>
+        {% if object.base_license %}
+        <tr>
+          <th scope="row">Base License</th>
+          <td>{{ object.base_license|linkify }}</td>
+        </tr>
+        {% endif %}
         <tr>
           <th scope="row">Purchase Model</th>
           <td>{{ object.get_purchase_model_display|default:"N/A" }}</td>

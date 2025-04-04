@@ -6,12 +6,13 @@ from django.utils.timezone import now
 from django.urls import reverse
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
+from datetime import date
 
 class LicenseType(NetBoxModel):
     VOLUME_TYPE_CHOICES = [
-        ("SINGLE", "Single License (1 device)"),
-        ("VOLUME", "Volume License (multiple devices)"),
-        ("UNLIMITED", "Unlimited License"),
+        ("SINGLE", "Single "),
+        ("VOLUME", "Volume"),
+        ("UNLIMITED", "Unlimited"),
     ]
 
     PURCHASE_MODEL_CHOICES = [
@@ -60,14 +61,14 @@ class LicenseType(NetBoxModel):
     clone_fields = ['manufacturer', 'volume_type', 'license_model', 'purchase_model']
 
     def clean(self):
-        if self.license_model and self.license_model.slug == "expansion":
+        if self.license_model == "EXPANSION":
             if not self.base_license:
-                raise ValidationError("An Expansion license type must reference a Base license.")
-            if self.base_license.license_model.slug != "base":
-                raise ValidationError("Base License must be of type 'base'.")
-        else:
+                raise ValidationError({"base_license": "An Expansion license type must reference a Base license."})
+            if self.base_license.license_model != "BASE":
+                raise ValidationError({"base_license": "Base License must be of type 'BASE'."})
+        elif self.license_model == "BASE":
             if self.base_license is not None:
-                raise ValidationError("Only Expansion licenses can reference a base license.")
+                raise ValidationError({"base_license": "Only Expansion licenses can reference a base license."})
 
     def __str__(self):
         return self.name
@@ -156,6 +157,31 @@ class License(NetBoxModel):
     class Meta:
         verbose_name = "License"
         verbose_name_plural = "Licenses"
+    def get_expiry_progress(self):
+        if not self.expiry_date or not self.purchase_date:
+            return None 
+
+        total_days = (self.expiry_date - self.purchase_date).days
+        days_left = (self.expiry_date - date.today()).days
+
+        if total_days <= 0:
+            percent = 100
+        else:
+            percent = int((1 - (days_left / total_days)) * 100)
+
+        if days_left < 0:
+            color = "danger"
+        elif days_left <= 30:
+            color = "warning"
+        else:
+            color = "success"
+
+        return {
+            "percent": max(0, min(percent, 100)),
+            "days_left": days_left,
+            "color": color,
+            "expired": days_left < 0
+        }
 
 
 class LicenseAssignment(NetBoxModel):
