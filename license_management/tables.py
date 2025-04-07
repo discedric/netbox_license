@@ -1,13 +1,16 @@
 from django.db.models import Sum
-from django_tables2 import tables
+from django_tables2 import tables, TemplateColumn
 from netbox.tables import NetBoxTable
 from .models import License, LicenseAssignment, LicenseType
+from .template_content import LICENSE_EXPIRY_PROGRESSBAR
+
 
 
 class LicenseTable(NetBoxTable):
     name = tables.Column(linkify=True)
     license_key = tables.Column(linkify=True)
     product_key = tables.Column(verbose_name="Product Key")
+    serial_number = tables.Column(verbose_name="Serial Number")
     manufacturer = tables.Column(
         verbose_name="License Manufacturer",
         accessor="manufacturer",
@@ -20,19 +23,15 @@ class LicenseTable(NetBoxTable):
     )
 
     volume_type = tables.Column(verbose_name="Volume Type", empty_values=())
-
-    is_parent_license = tables.Column(
-        verbose_name='Parent',
-        empty_values=()
-    )
-
-    is_child_license = tables.Column(
-        verbose_name='Child',
-        empty_values=()
-    )
-    
-
+    is_parent_license = tables.Column(verbose_name='Parent', empty_values=())
+    is_child_license = tables.Column(verbose_name='Child', empty_values=())
     assigned_count = tables.Column(empty_values=(), verbose_name="Assigned")
+
+    expiry_bar = TemplateColumn(
+        template_code=LICENSE_EXPIRY_PROGRESSBAR,
+        verbose_name="Expiry",
+        orderable=False
+    )
 
     def render_assigned_count(self, record):
         assigned = record.assignments.aggregate(total=Sum('volume'))['total'] or 0
@@ -53,17 +52,19 @@ class LicenseTable(NetBoxTable):
     def render_is_child_license(self, record):
         return "✅" if record.is_child_license else "❌"
 
+    
     class Meta(NetBoxTable.Meta):
         model = License
         fields = (
-            "name", "license_key", "product_key",
+            "name", "license_key", "product_key", "serial_number",
             "manufacturer", "parent_license",
             "is_parent_license", "is_child_license", "description",
             "assigned_count", "volume_type",
-            "expiry_date", "purchase_date",
+            "expiry_date", "purchase_date", "expiry_bar",
         )
         default_columns = fields
         attrs = {"class": "table table-striped table-bordered"}
+
 
 class LicenseTypeTable(NetBoxTable):
     name = tables.Column(linkify=True)

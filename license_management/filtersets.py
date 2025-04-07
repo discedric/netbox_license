@@ -108,6 +108,11 @@ class LicenseTypeFilterSet(NetBoxModelFilterSet):
         label="License Model"
     )
 
+    base_license = django_filters.ModelMultipleChoiceFilter(
+        queryset=LicenseType.objects.filter(license_model="BASE"),
+        label="Base License"
+    )
+
     name = django_filters.CharFilter(lookup_expr='icontains', label="Name")
     slug = django_filters.CharFilter(lookup_expr='icontains', label="Slug")
     product_code = django_filters.CharFilter(lookup_expr='icontains', label="Product Code")
@@ -119,7 +124,7 @@ class LicenseTypeFilterSet(NetBoxModelFilterSet):
         model = LicenseType
         fields = [
             "name", "slug", "manufacturer", "product_code", "ean_code",
-            "volume_type", "license_model", "purchase_model",
+            "volume_type", "license_model", "purchase_model", "base_license"
         ]
 
     def search(self, queryset, name, value):

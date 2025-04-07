@@ -66,13 +66,13 @@ class LicenseTypeForm(NetBoxModelForm):
     )
 
     volume_type = forms.ChoiceField(
-        choices=LicenseType.VOLUME_TYPE_CHOICES,
+        choices=[('', '---------')] + LicenseType.VOLUME_TYPE_CHOICES,
         required=True,
         label="Volume Type"
     )
 
     license_model = forms.ChoiceField(
-        choices=LicenseType.LICENSE_MODEL_CHOICES,
+        choices= LicenseType.LICENSE_MODEL_CHOICES,
         required=True,
         label="License Model"
     )
@@ -83,11 +83,14 @@ class LicenseTypeForm(NetBoxModelForm):
         label="Base License",
         help_text="Select a base license if this is an expansion pack.",
         selector=True,
-        query_params={"license_model": "BASE"}  # 💡 Filters API call
+        query_params={
+            "license_model": "BASE",
+            "manufacturer_id": "$manufacturer",
+        }
     )
 
     purchase_model = forms.ChoiceField(
-        choices=LicenseType.PURCHASE_MODEL_CHOICES,
+        choices=[('', '---------')] + LicenseType.PURCHASE_MODEL_CHOICES,
         required=True,
         label="Purchase Model"
     )

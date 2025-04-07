@@ -1,16 +1,20 @@
 {% load helpers %}
 
 <div class="card">
-  <h5 class="card-header">Assigned Licenses</h5>
-  {% if licenses %}
-    <div class="card-body">
-      <a href="{% url 'plugins:license_management:licenseassignment_list' %}?virtual_machine_id={{ object.id }}">
-        {{ licenses|length }} license{{ licenses|length|pluralize }} assigned
-      </a>
-    </div>
-  {% else %}
-    <div class="card-body">
-      <span class="text-muted">No licenses assigned</span>
-    </div>
-  {% endif %}
+  <h5 class="card-header">Related Objects</h5>
+  <table class="table table-hover table-headings">
+    <tbody>
+      <tr>
+        <td>
+          <a href="{% url 'plugins:license_management:licenseassignment_list' %}?virtual_machine_id={{ object.id }}
+          ">
+            Assigned Licenses
+          </a>
+        </td>
+        <td class="text-end">
+          <span class="badge bg-primary">{{ licenses|length }}</span>
+        </td>
+      </tr>
+    </tbody>
+  </table>
 </div>

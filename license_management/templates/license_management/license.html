@@ -108,6 +108,41 @@
       </table>
     </div>
 
+    <div class="card mt-3">
+      <h5 class="card-header"> Licenses</h5>
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>License Key</th>
+            <th>Manufacturer</th>
+            <th>Volume</th>
+            <th>Expiry Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sub in object.sub_licenses.all %}
+          <tr>
+            <td>{{ sub|linkify }}</td>
+            <td>{{ sub.manufacturer|linkify|placeholder }}</td>
+            <td>
+              {% if sub.volume_type == 'UNLIMITED' %}
+                Unlimited
+              {% else %}
+                {{ sub.volume_limit }}
+              {% endif %}
+            </td>
+            <td>{{ sub.expiry_date|date:"Y-m-d"|placeholder }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="4" class="text-muted">No sub licenses found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    
+
     {% include 'inc/panels/tags.html' %}
     {% include 'inc/panels/comments.html' %}
   </div>

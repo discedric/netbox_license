@@ -157,13 +157,14 @@ class License(NetBoxModel):
     class Meta:
         verbose_name = "License"
         verbose_name_plural = "Licenses"
+
     def get_expiry_progress(self):
         if not self.expiry_date or not self.purchase_date:
-            return None 
+            return None
 
-        total_days = (self.expiry_date - self.purchase_date).days
         days_left = (self.expiry_date - date.today()).days
 
+        total_days = (self.expiry_date - self.purchase_date).days
         if total_days <= 0:
             percent = 100
         else:
@@ -171,8 +172,10 @@ class License(NetBoxModel):
 
         if days_left < 0:
             color = "danger"
-        elif days_left <= 30:
+        elif days_left < 90:
             color = "warning"
+        elif days_left < 365:
+            color = "info"
         else:
             color = "success"
 
@@ -180,7 +183,7 @@ class License(NetBoxModel):
             "percent": max(0, min(percent, 100)),
             "days_left": days_left,
             "color": color,
-            "expired": days_left < 0
+            "expired": days_left < 0,
         }
 
 
