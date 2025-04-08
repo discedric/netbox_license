@@ -66,8 +66,13 @@
           <td>{{ object.purchase_date|date:"Y-m-d"|placeholder }}</td>
         </tr>
         <tr>
-          <th scope="row">Expiry Date</th>
-          <td>{{ object.expiry_date|date:"Y-m-d"|placeholder }}</td>
+          <th scope="row">Expiry</th>
+          <td>
+            {{ object.expiry_date|isodate|placeholder }}
+            <div class="mt-1">
+              {% include warranty_progressbar with record=object %}
+            </div>
+          </td>
         </tr>
         <tr>
           <th scope="row">Description</th>

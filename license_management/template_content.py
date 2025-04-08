@@ -1,34 +1,41 @@
+from django.template import Template, Context
 from django.apps import apps
 from netbox.plugins import PluginTemplateExtension
 
 
 LICENSE_EXPIRY_PROGRESSBAR = """
-{% load humanize %}
-{% with p=record.get_expiry_progress %}
-  {% if not p %}
-    <span class="text-muted">No expiry date</span>
-  {% elif p.days_left < 0 %}
-    <!-- Expired -->
-    <div class="progress" role="progressbar" style="height:10px;">
-      <div class="progress-bar progress-bar-striped text-bg-danger" style="width:100%;">
-        Expired {{ p.days_left|abs }} day{{ p.days_left|abs|pluralize }} ago
-      </div>
-    </div>
-  {% else %}
-    <!-- Not expired -->
-    <div class="progress" role="progressbar" style="height:10px;">
-      <div class="progress-bar progress-bar-striped text-bg-success"
-           style="width:{{ p.percent }}%;"
-           aria-valuenow="{{ p.percent }}"
-           aria-valuemin="0"
-           aria-valuemax="100">
-        {{ p.days_left }} day{{ p.days_left|pluralize }} remaining
-      </div>
-    </div>
-  {% endif %}
+{% with record.get_expiry_progress as wp %}
+{% if wp %}
+  <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ wp.percent }}">
+    <div class="progress-bar text-bg-{{ wp.color }}" style="width:{{ wp.percent }}%;"></div>
+    {% if wp.expired %}
+      <span class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center text-light">
+        Expired {{ record.expiry_date|timesince|split:','|first }} ago
+      </span>
+    {% else %}
+      <span class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center text-body-emphasis">
+        {{ record.expiry_date|timeuntil|split:','|first }}
+      </span>
+    {% endif %}
+  </div>
+{% else %}
+  <span class="text-muted">N/A</span>
+{% endif %}
 {% endwith %}
 """
 
+class LicenseProgressBarInjector(PluginTemplateExtension):
+    model = 'license_management.license'
+
+    def right_page(self):
+        return self.render(
+            'license_management/inc/license_detail.html',
+            extra_context={
+                'warranty_progressbar': Template(LICENSE_EXPIRY_PROGRESSBAR)
+            }
+        )
+
+template_extensions = (LicenseProgressBarInjector,)
 
 class DeviceLicenseExtension(PluginTemplateExtension):
     model = "dcim.device"

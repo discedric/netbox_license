@@ -1,33 +1,25 @@
 from license_management.api.serializers.licenses import LicenseSerializer
 from netbox.views import generic
-from datetime import date
 from utilities.views import register_model_view
-
+from django.template import  Template, Context
+from ..template_content import LICENSE_EXPIRY_PROGRESSBAR
 from ..models import License
 from .. import filtersets, tables
 
 from ..forms.filtersets import (
     LicenseFilterForm,
-    LicenseTypeFilterForm,
-    LicenseAssignmentFilterForm
 )
 
 from ..forms.bulk_edit import (
     LicenseBulkEditForm,
-    LicenseTypeBulkEditForm,
-    LicenseAssignmentBulkEditForm
 )
 
 from ..forms.bulk_import import (
     LicenseImportForm,
-    LicenseTypeImportForm,
-    LicenseAssignmentImportForm
 )
 
 from ..forms.models import (
     LicenseForm,
-    LicenseTypeForm,
-    LicenseAssignmentForm
 )
 
 __all__ = (
@@ -48,10 +40,12 @@ class LicenseView(generic.ObjectView):
     queryset = License.objects.all()
 
     def get_extra_context(self, request, instance):
-        return {
-            "expiry_progress": instance.get_expiry_progress()
-        }
 
+        tpl = Template(LICENSE_EXPIRY_PROGRESSBAR)
+        rendered = tpl.render(Context({'record': instance}))
+        context = super().get_extra_context(request, instance)
+        context["warranty_progressbar"] = rendered
+        return context
 
 
 class LicenseChangeLogView(generic.ObjectChangeLogView):

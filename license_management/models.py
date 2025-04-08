@@ -6,7 +6,7 @@ from django.utils.timezone import now
 from django.urls import reverse
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
-from datetime import date
+from datetime import date, timedelta
 
 class LicenseType(NetBoxModel):
     VOLUME_TYPE_CHOICES = [
@@ -178,13 +178,30 @@ class License(NetBoxModel):
             color = "info"
         else:
             color = "success"
-
         return {
             "percent": max(0, min(percent, 100)),
             "days_left": days_left,
             "color": color,
             "expired": days_left < 0,
         }
+    @property
+    def expiry_progress(self):
+        """
+        Return the expiry percentage (used in progress bars).
+        Returns the 'percent' key from get_expiry_progress() or None.
+        """
+        progress = self.get_expiry_progress()
+        return progress.get("percent") if progress else None
+
+    @property
+    def expiry_remaining(self):
+        """
+        Return a timedelta of days remaining before expiry.
+        If expiry date is unknown, return timedelta(0).
+        """
+        if self.expiry_date:
+            return self.expiry_date - date.today()
+        return timedelta(days=0)
 
 
 class LicenseAssignment(NetBoxModel):
