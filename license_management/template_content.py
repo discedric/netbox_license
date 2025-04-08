@@ -1,20 +1,18 @@
-from django.template import Template, Context
 from django.apps import apps
 from netbox.plugins import PluginTemplateExtension
 
-
-LICENSE_EXPIRY_PROGRESSBAR = """
+LICENSE_EXPIRY_PROGRESSBAR_TABLE = """
 {% with record.get_expiry_progress as wp %}
 {% if wp %}
-  <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ wp.percent }}">
-    <div class="progress-bar text-bg-{{ wp.color }}" style="width:{{ wp.percent }}%;"></div>
+  <div class="progress position-relative" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ wp.percent }}">
+    <div class="progress-bar bg-{{ wp.color }}" style="width:{{ wp.percent }}%;"></div>
     {% if wp.expired %}
-      <span class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center text-light">
+      <span class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center text-white small">
         Expired {{ record.expiry_date|timesince|split:','|first }} ago
       </span>
     {% else %}
-      <span class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center text-body-emphasis">
-        {{ record.expiry_date|timeuntil|split:','|first }}
+      <span class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center text-white small">
+        {{ record.expiry_date|timeuntil|split:','|first }} left
       </span>
     {% endif %}
   </div>
@@ -24,18 +22,15 @@ LICENSE_EXPIRY_PROGRESSBAR = """
 {% endwith %}
 """
 
+
 class LicenseProgressBarInjector(PluginTemplateExtension):
     model = 'license_management.license'
 
     def right_page(self):
-        return self.render(
-            'license_management/inc/license_detail.html',
-            extra_context={
-                'warranty_progressbar': Template(LICENSE_EXPIRY_PROGRESSBAR)
-            }
-        )
+        return self.render('license_management/inc/license_progressbar.html', {
+            'record': self.context['object']
+        })
 
-template_extensions = (LicenseProgressBarInjector,)
 
 class DeviceLicenseExtension(PluginTemplateExtension):
     model = "dcim.device"
@@ -116,4 +111,5 @@ template_extensions = (
     DeviceLicenseExtension,
     VirtualMachineLicenseExtension,
     ClustersLicenseExtension,
+    LicenseProgressBarInjector,
 )

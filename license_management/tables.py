@@ -2,7 +2,7 @@ from django.db.models import Sum
 from django_tables2 import tables, TemplateColumn
 from netbox.tables import NetBoxTable
 from .models import License, LicenseAssignment, LicenseType
-from .template_content import LICENSE_EXPIRY_PROGRESSBAR
+from .template_content import LICENSE_EXPIRY_PROGRESSBAR_TABLE
 
 
 
@@ -28,10 +28,11 @@ class LicenseTable(NetBoxTable):
     assigned_count = tables.Column(empty_values=(), verbose_name="Assigned")
 
     expiry_bar = TemplateColumn(
-        template_code=LICENSE_EXPIRY_PROGRESSBAR,
+        template_code=LICENSE_EXPIRY_PROGRESSBAR_TABLE,
         verbose_name="Expiry",
         orderable=False
     )
+
 
     def render_assigned_count(self, record):
         assigned = record.assignments.aggregate(total=Sum('volume'))['total'] or 0
