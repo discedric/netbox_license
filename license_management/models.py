@@ -7,6 +7,7 @@ from django.urls import reverse
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from datetime import date, timedelta
+from taggit.managers import TaggableManager
 
 # ---------- LicenseType ----------
 
@@ -103,7 +104,7 @@ class License(NetBoxModel):
     manufacturer = models.ForeignKey(
         Manufacturer,
         on_delete=models.PROTECT,
-        related_name="licenses",
+        related_name="lm_licenses",
         null=True, blank=True,
         help_text="Redundant for filtering; copied from license_type."
     )
@@ -120,6 +121,7 @@ class License(NetBoxModel):
         related_name="sub_licenses",
         help_text="Link to parent license for extensions."
     )
+    tags = TaggableManager(related_name="lm_license_tags")
 
     def clean(self):
         if self.license_type:
@@ -238,7 +240,7 @@ class LicenseAssignment(NetBoxModel):
         null=True, blank=True
     )
     manufacturer = models.ForeignKey(
-        Manufacturer, on_delete=models.PROTECT, related_name="license_assignments", null=True, blank=True
+        Manufacturer, on_delete=models.PROTECT, related_name="lm_assignments", null=True, blank=True
     )
     volume = models.PositiveIntegerField(
         default=1,
@@ -255,6 +257,8 @@ class LicenseAssignment(NetBoxModel):
         null=True,
         blank=True
     )
+
+    tags = TaggableManager(related_name="lm_assignment_tags")
 
     def clean(self):
         if self.device and self.virtual_machine:
