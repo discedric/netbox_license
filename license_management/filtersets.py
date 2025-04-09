@@ -6,6 +6,56 @@ from netbox.filtersets import NetBoxModelFilterSet
 from dcim.models import Manufacturer, Device
 from virtualization.models import VirtualMachine, Cluster
 
+# ---------- LicenseType ----------
+
+class LicenseTypeFilterSet(NetBoxModelFilterSet):
+    manufacturer_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='manufacturer',
+        queryset=Manufacturer.objects.all(),
+        label="Manufacturer (ID)"
+    )
+
+    manufacturer = django_filters.ModelMultipleChoiceFilter(
+        field_name='manufacturer__slug',
+        queryset=Manufacturer.objects.all(),
+        to_field_name='slug',
+        label="Manufacturer name (slug)"
+    )
+
+    license_model = django_filters.ChoiceFilter(
+        choices=LicenseType.LICENSE_MODEL_CHOICES,
+        label="License Model"
+    )
+
+    base_license = django_filters.ModelMultipleChoiceFilter(
+        queryset=LicenseType.objects.filter(license_model="BASE"),
+        label="Base License"
+    )
+
+    name = django_filters.CharFilter(lookup_expr='icontains', label="Name")
+    slug = django_filters.CharFilter(lookup_expr='icontains', label="Slug")
+    product_code = django_filters.CharFilter(lookup_expr='icontains', label="Product Code")
+    ean_code = django_filters.CharFilter(lookup_expr='icontains', label="EAN Code")
+    volume_type = django_filters.ChoiceFilter(choices=LicenseType.VOLUME_TYPE_CHOICES, label="Volume Type")
+    purchase_model = django_filters.ChoiceFilter(choices=LicenseType.PURCHASE_MODEL_CHOICES, label="Purchase Model")
+
+    class Meta:
+        model = LicenseType
+        fields = [
+            "name", "slug", "manufacturer", "product_code", "ean_code",
+            "volume_type", "license_model", "purchase_model", "base_license"
+        ]
+
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        return queryset.filter(
+            Q(name__icontains=value) |
+            Q(product_code__icontains=value) |
+            Q(ean_code__icontains=value)
+        ).distinct()
+
+# ---------- License ----------
 
 class LicenseFilterSet(NetBoxModelFilterSet):
     manufacturer_id = django_filters.ModelMultipleChoiceFilter(
@@ -88,55 +138,8 @@ class LicenseFilterSet(NetBoxModelFilterSet):
             Q(serial_number__icontains=value)
         ).distinct()
 
+# ---------- Assignments ----------
 
-class LicenseTypeFilterSet(NetBoxModelFilterSet):
-    manufacturer_id = django_filters.ModelMultipleChoiceFilter(
-        field_name='manufacturer',
-        queryset=Manufacturer.objects.all(),
-        label="Manufacturer (ID)"
-    )
-
-    manufacturer = django_filters.ModelMultipleChoiceFilter(
-        field_name='manufacturer__slug',
-        queryset=Manufacturer.objects.all(),
-        to_field_name='slug',
-        label="Manufacturer name (slug)"
-    )
-
-    license_model = django_filters.ChoiceFilter(
-        choices=LicenseType.LICENSE_MODEL_CHOICES,
-        label="License Model"
-    )
-
-    base_license = django_filters.ModelMultipleChoiceFilter(
-        queryset=LicenseType.objects.filter(license_model="BASE"),
-        label="Base License"
-    )
-
-    name = django_filters.CharFilter(lookup_expr='icontains', label="Name")
-    slug = django_filters.CharFilter(lookup_expr='icontains', label="Slug")
-    product_code = django_filters.CharFilter(lookup_expr='icontains', label="Product Code")
-    ean_code = django_filters.CharFilter(lookup_expr='icontains', label="EAN Code")
-    volume_type = django_filters.ChoiceFilter(choices=LicenseType.VOLUME_TYPE_CHOICES, label="Volume Type")
-    purchase_model = django_filters.ChoiceFilter(choices=LicenseType.PURCHASE_MODEL_CHOICES, label="Purchase Model")
-
-    class Meta:
-        model = LicenseType
-        fields = [
-            "name", "slug", "manufacturer", "product_code", "ean_code",
-            "volume_type", "license_model", "purchase_model", "base_license"
-        ]
-
-    def search(self, queryset, name, value):
-        if not value.strip():
-            return queryset
-        return queryset.filter(
-            Q(name__icontains=value) |
-            Q(product_code__icontains=value) |
-            Q(ean_code__icontains=value)
-        ).distinct()
-    
-    
 class LicenseAssignmentFilterSet(NetBoxModelFilterSet):
     """Filterset for License Assignments with comprehensive filtering."""
 

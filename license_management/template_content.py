@@ -8,7 +8,7 @@ LICENSE_EXPIRY_PROGRESSBAR_TABLE = """
     <div class="progress-bar bg-{{ wp.color }}" style="width:{{ wp.percent }}%;"></div>
     {% if wp.expired %}
       <span class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center text-white small">
-        Expired {{ record.expiry_date|timesince|split:','|first }} ago
+        {{ record.expiry_date|timesince|split:','|first }} ago
       </span>
     {% else %}
       <span class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center text-white small">

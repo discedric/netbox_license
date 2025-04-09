@@ -12,49 +12,7 @@ __all__ = (
     'LicenseTypeForm',
 )
 
-class LicenseForm(NetBoxModelForm):
-    manufacturer = DynamicModelChoiceField(
-        queryset=Manufacturer.objects.all(),
-        required=True,
-        label="License Manufacturer",
-        selector=True,
-        quick_add=True
-    )
-
-    license_type = DynamicModelChoiceField(
-        queryset=LicenseType.objects.all(),
-        required=True,
-        label="License Type",
-        help_text="Select the type of license.",
-        selector=True,
-        quick_add=True,
-        query_params={'manufacturer_id': '$manufacturer'}
-    )
-
-    parent_license = DynamicModelChoiceField(
-        queryset=License.objects.all(),
-        required=False,
-        label="Parent License",
-        help_text="Select a parent license if applicable.",
-        selector=True,
-        query_params={'manufacturer_id': '$manufacturer'}
-    )
-
-    license_key = forms.CharField(required=True, label="License Key")
-
-    purchase_date = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}), label="Purchase Date")
-    expiry_date = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}), label="Expiry Date")
-
-    comment = CommentField()
-
-    class Meta:
-        model = License
-        fields = [
-            "manufacturer", "license_type", "license_key", "serial_number",
-            "description", "volume_limit", "parent_license", "purchase_date",
-            "expiry_date", "comment"
-        ]
-
+# ---------- LicenseType ----------
 
 class LicenseTypeForm(NetBoxModelForm):
     manufacturer = DynamicModelChoiceField(
@@ -142,6 +100,52 @@ class LicenseTypeForm(NetBoxModelForm):
 
         return cleaned_data
 
+# ---------- License ----------
+
+class LicenseForm(NetBoxModelForm):
+    manufacturer = DynamicModelChoiceField(
+        queryset=Manufacturer.objects.all(),
+        required=True,
+        label="License Manufacturer",
+        selector=True,
+        quick_add=True
+    )
+
+    license_type = DynamicModelChoiceField(
+        queryset=LicenseType.objects.all(),
+        required=True,
+        label="License Type",
+        help_text="Select the type of license.",
+        selector=True,
+        quick_add=True,
+        query_params={'manufacturer_id': '$manufacturer'}
+    )
+
+    parent_license = DynamicModelChoiceField(
+        queryset=License.objects.all(),
+        required=False,
+        label="Parent License",
+        help_text="Select a parent license if applicable.",
+        selector=True,
+        query_params={'manufacturer_id': '$manufacturer'}
+    )
+
+    license_key = forms.CharField(required=True, label="License Key")
+
+    purchase_date = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}), label="Purchase Date")
+    expiry_date = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}), label="Expiry Date")
+
+    comment = CommentField()
+
+    class Meta:
+        model = License
+        fields = [
+            "manufacturer", "license_type", "license_key", "serial_number",
+            "description", "volume_limit", "parent_license", "purchase_date",
+            "expiry_date", "comment"
+        ]
+
+# ---------- Assignments ----------
 
 class LicenseAssignmentForm(NetBoxModelForm):
     manufacturer = DynamicModelChoiceField(

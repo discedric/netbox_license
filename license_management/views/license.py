@@ -20,6 +20,8 @@ __all__ = (
     'LicenseBulkDeleteView',
 )
 
+# -------------------- Object Views --------------------
+
 @register_model_view(License)
 class LicenseView(generic.ObjectView):
     """View for displaying a single License"""
@@ -71,6 +73,7 @@ class LicenseDeleteView(generic.ObjectDeleteView):
     """View for deleting a license"""
     queryset = License.objects.all()
 
+# -------------------- bulk --------------------
 
 @register_model_view(License, 'bulk_import', path='import', detail=False)
 class LicenseBulkImportView(generic.BulkImportView):

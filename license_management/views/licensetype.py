@@ -19,6 +19,8 @@ __all__ = (
     'LicensetypeJournalView',
 )
 
+# -------------------- Object Views --------------------
+
 @register_model_view(LicenseType)
 class LicenseTypeView(generic.ObjectView):
     queryset = LicenseType.objects.all()
@@ -61,6 +63,7 @@ class LicenseTypeEditView(generic.ObjectEditView):
 class LicenseTypeDeleteView(generic.ObjectDeleteView):
     queryset = LicenseType.objects.all()
 
+# -------------------- bulk --------------------
 
 @register_model_view(LicenseType, 'bulk_import', path='import', detail=False)
 class LicenseTypeBulkImportView(generic.BulkImportView):

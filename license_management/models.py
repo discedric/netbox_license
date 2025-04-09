@@ -8,6 +8,8 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from datetime import date, timedelta
 
+# ---------- LicenseType ----------
+
 class LicenseType(NetBoxModel):
     VOLUME_TYPE_CHOICES = [
         ("SINGLE", "Single "),
@@ -85,6 +87,7 @@ class LicenseType(NetBoxModel):
         verbose_name = "License Type"
         verbose_name_plural = "License Types"
 
+# ---------- License ----------
 
 class License(NetBoxModel):
     license_key = models.CharField(max_length=255, unique=True)
@@ -123,10 +126,15 @@ class License(NetBoxModel):
             self.manufacturer = self.license_type.manufacturer
 
         vt = self.license_type.volume_type if self.license_type else None
+        
         if vt == "SINGLE":
+            if self.volume_limit and self.volume_limit != 1:
+                raise ValidationError({"volume_limit": "Single licenses must have a volume limit of exactly 1."})
             self.volume_limit = 1
+
         elif vt == "UNLIMITED":
             self.volume_limit = None
+
         elif vt == "VOLUME":
             if not self.volume_limit or self.volume_limit < 2:
                 raise ValidationError("Volume licenses require a volume limit of at least 2.")
@@ -164,39 +172,28 @@ class License(NetBoxModel):
         verbose_name_plural = "Licenses"
 
     def get_expiry_progress(self):
-        if not self.expiry_date or not self.purchase_date:
-            return None
 
-        days_left = (self.expiry_date - date.today()).days
-
-        total_days = (self.expiry_date - self.purchase_date).days
-        if total_days <= 0:
-            percent = 100
-        else:
-            percent = int((1 - (days_left / total_days)) * 100)
-
+        days_left = self.expiry_remaining.days
         if days_left < 0:
             color = "danger"
         elif days_left < 90:
             color = "warning"
-        elif days_left < 365:
-            color = "info"
-        else:
+        else :
             color = "success"
         return {
-            "percent": max(0, min(percent, 100)),
+            "percent": self.expiry_progress,
             "days_left": days_left,
             "color": color,
             "expired": days_left < 0,
         }
+
     @property
-    def expiry_progress(self):
+    def expiry_elapsed(self):
         """
-        Return the expiry percentage (used in progress bars).
-        Returns the 'percent' key from get_expiry_progress() or None.
+        Return the elapsed percentage (used in progress bars).
         """
-        progress = self.get_expiry_progress()
-        return progress.get("percent") if progress else None
+        return date.today() - self.purchase_date if self.purchase_date else None
+
 
     @property
     def expiry_remaining(self):
@@ -206,8 +203,25 @@ class License(NetBoxModel):
         """
         if self.expiry_date:
             return self.expiry_date - date.today()
-        return timedelta(days=0)
+        return None
 
+    @property
+    def expiry_total(self):
+        """
+        Return the total duration of the license in days.
+        If purchase date is unknown, return timedelta(0).
+        """
+        if self.purchase_date and self.expiry_date:
+            return self.expiry_date - self.purchase_date
+        return None
+
+    @property
+    def expiry_progress(self):
+        if not self.expiry_date or not self.purchase_date:
+            return None
+        return int(100* (self.expiry_elapsed / self.expiry_total))
+
+# ---------- Assignments ----------
 
 class LicenseAssignment(NetBoxModel):
     """Represents assignment of a license to a device OR a virtual machine."""

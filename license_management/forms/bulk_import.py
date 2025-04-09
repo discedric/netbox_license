@@ -5,6 +5,59 @@ from dcim.models import Manufacturer, Device
 from virtualization.models import VirtualMachine
 from license_management.models import License, LicenseType, LicenseAssignment
 
+# ---------- LicenseType ----------
+
+class LicenseTypeImportForm(NetBoxModelImportForm):
+    manufacturer = CSVModelChoiceField(
+        queryset=Manufacturer.objects.all(),
+        to_field_name='name',
+        label='Manufacturer',
+        help_text='The license type manufacturer'
+    )
+
+    license_model = forms.ChoiceField(
+    choices=LicenseType.LICENSE_MODEL_CHOICES,
+    label='License Model',
+    help_text='Base license or expansion pack'
+)
+
+    class Meta:
+        model = LicenseType
+        fields = [
+            "name",
+            "slug",
+            "manufacturer",
+            "product_code",
+            "ean_code",
+            "volume_type",
+            "license_model",
+            "purchase_model",
+            "description"
+        ]
+        labels = {
+            "name": "Name",
+            "slug": "Slug",
+            "manufacturer": "Manufacturer",
+            "product_code": "Product Code",
+            "ean_code": "EAN Code",
+            "volume_type": "Volume Type",
+            "license_model": "License Model",
+            "purchase_model": "Purchase Model",
+            "description": "Description",
+        }
+        help_texts = {
+            "name": "Name of the license type",
+            "slug": "URL-friendly identifier",
+            "manufacturer": "Manufacturer of the license type",
+            "product_code": "Internal or external product code",
+            "ean_code": "European Article Number",
+            "volume_type": "Type of volume: single, volume, or unlimited",
+            "license_model": "Base license or expansion pack",
+            "purchase_model": "Peripheral or subscription",
+            "description": "Optional notes",
+        }
+
+# ---------- License ----------
 
 class LicenseImportForm(NetBoxModelImportForm):
     manufacturer = CSVModelChoiceField(
@@ -58,57 +111,7 @@ class LicenseImportForm(NetBoxModelImportForm):
     def clean(self):
         super().clean()
 
-
-class LicenseTypeImportForm(NetBoxModelImportForm):
-    manufacturer = CSVModelChoiceField(
-        queryset=Manufacturer.objects.all(),
-        to_field_name='name',
-        label='Manufacturer',
-        help_text='The license type manufacturer'
-    )
-
-    license_model = forms.ChoiceField(
-    choices=LicenseType.LICENSE_MODEL_CHOICES,
-    label='License Model',
-    help_text='Base license or expansion pack'
-)
-
-    class Meta:
-        model = LicenseType
-        fields = [
-            "name",
-            "slug",
-            "manufacturer",
-            "product_code",
-            "ean_code",
-            "volume_type",
-            "license_model",
-            "purchase_model",
-            "description"
-        ]
-        labels = {
-            "name": "Name",
-            "slug": "Slug",
-            "manufacturer": "Manufacturer",
-            "product_code": "Product Code",
-            "ean_code": "EAN Code",
-            "volume_type": "Volume Type",
-            "license_model": "License Model",
-            "purchase_model": "Purchase Model",
-            "description": "Description",
-        }
-        help_texts = {
-            "name": "Name of the license type",
-            "slug": "URL-friendly identifier",
-            "manufacturer": "Manufacturer of the license type",
-            "product_code": "Internal or external product code",
-            "ean_code": "European Article Number",
-            "volume_type": "Type of volume: single, volume, or unlimited",
-            "license_model": "Base license or expansion pack",
-            "purchase_model": "Peripheral or subscription",
-            "description": "Optional notes",
-        }
-
+# ---------- Assignments ----------
 
 class LicenseAssignmentImportForm(NetBoxModelImportForm):
     manufacturer = CSVModelChoiceField(
