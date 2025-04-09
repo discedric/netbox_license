@@ -4,10 +4,41 @@ from netbox.tables import NetBoxTable
 from .models import License, LicenseAssignment, LicenseType
 from .template_content import LICENSE_EXPIRY_PROGRESSBAR_TABLE
 
+# ---------- LicenseType ----------
 
+class LicenseTypeTable(NetBoxTable):
+    name = tables.Column(linkify=True)
+    slug = tables.Column()
+    manufacturer = tables.Column(
+        verbose_name="Manufacturer",
+        linkify=True
+    )
+    product_code = tables.Column(verbose_name="Product Code")
+    ean_code = tables.Column(verbose_name="EAN Code")
+    volume_type = tables.Column(verbose_name="Volume Type")
+    license_model = tables.Column(verbose_name="License Model")
+    purchase_model = tables.Column(verbose_name="Purchase Model")
+    description = tables.Column()
+
+    class Meta(NetBoxTable.Meta):
+        model = LicenseType
+        fields = (
+            "name", "slug", "manufacturer",
+            "product_code", "ean_code",
+            "volume_type", "license_model", "purchase_model",
+            "description"
+        )
+        default_columns = fields
+        attrs = {"class": "table table-striped table-bordered"}
+
+# ---------- License ----------
 
 class LicenseTable(NetBoxTable):
-    name = tables.Column(linkify=True)
+    name = tables.Column(
+        accessor="license_type.name",
+        linkify=lambda record: record.license_type.get_absolute_url(),
+        verbose_name="License Type"
+    )
     license_key = tables.Column(linkify=True)
     product_key = tables.Column(verbose_name="Product Key")
     serial_number = tables.Column(verbose_name="Serial Number")
@@ -30,7 +61,7 @@ class LicenseTable(NetBoxTable):
     expiry_bar = TemplateColumn(
         template_code=LICENSE_EXPIRY_PROGRESSBAR_TABLE,
         verbose_name="Expiry",
-        orderable=False
+        order_by="expiry_date",
     )
 
 
@@ -66,32 +97,7 @@ class LicenseTable(NetBoxTable):
         default_columns = fields
         attrs = {"class": "table table-striped table-bordered"}
 
-
-class LicenseTypeTable(NetBoxTable):
-    name = tables.Column(linkify=True)
-    slug = tables.Column()
-    manufacturer = tables.Column(
-        verbose_name="Manufacturer",
-        linkify=True
-    )
-    product_code = tables.Column(verbose_name="Product Code")
-    ean_code = tables.Column(verbose_name="EAN Code")
-    volume_type = tables.Column(verbose_name="Volume Type")
-    license_model = tables.Column(verbose_name="License Model")
-    purchase_model = tables.Column(verbose_name="Purchase Model")
-    description = tables.Column()
-
-    class Meta(NetBoxTable.Meta):
-        model = LicenseType
-        fields = (
-            "name", "slug", "manufacturer",
-            "product_code", "ean_code",
-            "volume_type", "license_model", "purchase_model",
-            "description"
-        )
-        default_columns = fields
-        attrs = {"class": "table table-striped table-bordered"}
-
+# ---------- Assignments ----------
 
 class LicenseAssignmentTable(NetBoxTable):
     license = tables.Column(

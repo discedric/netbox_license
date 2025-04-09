@@ -1,0 +1,31 @@
+{% load helpers %}
+
+<div class="card">
+  <h5 class="card-header">Related Objects</h5>
+  <table class="table table-hover table-headings">
+    <tbody>
+      <tr>
+        <td>
+          <a href="{% url 'plugins:license_management:license_list' %}?license_type_id={{ object.pk }}">
+            Licenses
+          </a>
+        </td>
+        <td class="text-end">
+          <span class="badge rounded-pill bg-primary">{{ object.licenses.count }}</span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <a href="{% url 'plugins:license_management:licenseassignment_list' %}?license__license_type_id={{ object.pk }}">
+            Assignments
+          </a>
+        </td>
+        <td class="text-end">
+          <span class="badge rounded-pill bg-primary">
+            {{ license_assignments }}
+          </span>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

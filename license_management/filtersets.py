@@ -112,6 +112,7 @@ class LicenseFilterSet(NetBoxModelFilterSet):
         exclude=True,
         label='Is Child License'
     )
+    
 
     purchase_date = django_filters.DateFromToRangeFilter(label="Purchase Date (Between)")
     expiry_date = django_filters.DateFromToRangeFilter(label="Expiry Date (Between)")

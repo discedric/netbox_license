@@ -9,7 +9,6 @@
 
 {% block breadcrumbs %}
   {{ block.super }}
-  
   <li class="breadcrumb-item active">{{ object }}</li>
 {% endblock %}
 
@@ -21,11 +20,11 @@
       <table class="table table-hover attr-table">
         <tr>
           <th scope="row">Software Name</th>
-          <td>{{ object.name|placeholder }}</td>
+          <td>{{ object.license_type|linkify }}</td>
         </tr>
         <tr>
           <th>License Key</th>
-          <td class="font-monospace">{{ object.license_key|placeholder }}</td>
+          <td class="font-monospace">{{ object|linkify }}</td>
         </tr>
         <tr>
           <th scope="row">Product Key</th>
@@ -41,8 +40,8 @@
         </tr>
         <tr>
           <th scope="row">Volume Type</th>
-          <td>{{ object.get_volume_type_display }}</td>
-        </tr>
+          <td>{{ object.license_type.get_volume_type_display }}</td>
+        </tr>        
         <tr>
           <th scope="row">Volume Limit</th>
           <td>
@@ -59,7 +58,7 @@
         </tr>
         <tr>
           <th scope="row">Parent License</th>
-          <td>{{ object.parent_license|linkify|placeholder }}</td>
+          <td>{{ object.parent_license|linkify|default:"None" }}</td>
         </tr>
         <tr>
           <th scope="row">Purchase Date</th>
@@ -115,7 +114,7 @@
     </div>
 
     <div class="card mt-3">
-      <h5 class="card-header"> Licenses</h5>
+      <h5 class="card-header">Licenses</h5>
       <table class="table table-hover">
         <thead>
           <tr>
@@ -147,7 +146,6 @@
         </tbody>
       </table>
     </div>
-    
 
     {% include 'inc/panels/tags.html' %}
     {% include 'inc/panels/comments.html' %}

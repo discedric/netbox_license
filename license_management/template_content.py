@@ -1,5 +1,6 @@
 from django.apps import apps
 from netbox.plugins import PluginTemplateExtension
+#from .models import LicenseAssignment, License, LicenseType
 
 LICENSE_EXPIRY_PROGRESSBAR_TABLE = """
 {% with record.get_expiry_progress as wp %}
@@ -106,10 +107,24 @@ class ClustersLicenseExtension(PluginTemplateExtension):
 
         return self.render("license_management/inc/clusters_info.html", extra_context=context)
 
+class LicenseTypeExtension(PluginTemplateExtension):
+    model = "license_management.licensetype"
+
+    def right_page(self):
+        licenses = self.context['object'].licenses.all()
+        license_assignments = sum(l.assignments.count() for l in licenses)
+        #licenseassignment = LicenseAssignment.objects.filter(license__in=licenses).count()
+        context = {
+            "object": self.context["object"],
+            "license_assignments": license_assignments,
+        }
+
+        return self.render("license_management/inc/licensetype_related.html", extra_context=context)
 
 template_extensions = (
     DeviceLicenseExtension,
     VirtualMachineLicenseExtension,
     ClustersLicenseExtension,
     LicenseProgressBarInjector,
+    LicenseTypeExtension,
 )
