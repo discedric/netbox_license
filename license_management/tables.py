@@ -21,6 +21,7 @@ class LicenseTypeTable(NetBoxTable):
     product_code = tables.Column(verbose_name="Product Code")
     ean_code = tables.Column(verbose_name="EAN Code")
     volume_type = tables.Column(verbose_name="Volume Type")
+    volume_relation = tables.Column(verbose_name="Volume Relation")
     license_model = tables.Column(verbose_name="License Model")
     purchase_model = tables.Column(verbose_name="Purchase Model")
     description = tables.Column()
@@ -30,7 +31,7 @@ class LicenseTypeTable(NetBoxTable):
         fields = (
             "id", "name", "slug", "manufacturer",
             "product_code", "ean_code",
-            "volume_type", "license_model", "purchase_model",
+            "volume_type", "volume_relation","license_model", "purchase_model",
             "description"
         )
         default_columns = (
@@ -46,6 +47,11 @@ class LicenseTable(NetBoxTable):
         accessor="license_type.name",
         linkify=lambda record: record.license_type.get_absolute_url(),
         verbose_name="License Type"
+    )
+    license_model = tables.Column(
+        accessor='license_type.license_model',
+        verbose_name='License Model',
+        order_by='license_type__license_model'
     )
     license_key = tables.Column(linkify=True)
     product_key = tables.Column(verbose_name="Product Key")
@@ -68,6 +74,12 @@ class LicenseTable(NetBoxTable):
     )
 
     volume_type = tables.Column(verbose_name="Volume Type", empty_values=())
+
+    volume_relation = tables.Column(
+        accessor="license_type.volume_relation",
+        verbose_name="Volume Relation",
+        order_by="license_type__volume_relation"
+    )
     is_parent_license = tables.Column(verbose_name='Parent', empty_values=())
     is_child_license = tables.Column(verbose_name='Child', empty_values=())
     assigned_count = tables.Column(empty_values=(), verbose_name="Assigned")
@@ -102,10 +114,10 @@ class LicenseTable(NetBoxTable):
     class Meta(NetBoxTable.Meta):
         model = License
         fields = (
-            "license_type", "license_key", "product_key", "serial_number",
+            "license_type", "license_model", "license_key", "product_key", "serial_number",
             "manufacturer", "parent_license", "parent_license_type",
             "is_parent_license", "is_child_license", "description",
-            "assigned_count", "volume_type",
+            "assigned_count", "volume_type", "volume_relation",
             "expiry_date", "purchase_date", "expiry_bar",
         )
         default_columns = (
@@ -153,6 +165,12 @@ class LicenseAssignmentTable(NetBoxTable):
         linkify=True
     )
     volume = tables.Column(verbose_name="Volume")
+
+    volume_relation = tables.Column(
+        accessor="license.license_type.volume_relation",
+        verbose_name="Volume Relation",
+        order_by="license__license_type__volume_relation"
+    )
     assigned_on = tables.Column(verbose_name="Assigned On")
     description = tables.Column(verbose_name="Description")
 
@@ -161,7 +179,7 @@ class LicenseAssignmentTable(NetBoxTable):
         fields = (
             "license", "license_key", "manufacturer",
             "device", "device_manufacturer",
-            "virtual_machine", "volume",
+            "virtual_machine", "volume", "volume_relation",
             "assigned_on", "description"
         )
         default_columns = (

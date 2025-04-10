@@ -69,8 +69,18 @@ class LicenseFilterSet(NetBoxModelFilterSet):
         to_field_name='slug',
         label=_('Manufacturer name (slug)'),
     )
-
-    volume_type = django_filters.ChoiceFilter(
+    license_model = django_filters.MultipleChoiceFilter(
+        field_name='license_type__license_model',
+        choices=LicenseType.LICENSE_MODEL_CHOICES,
+        label='License Model'
+    )
+    license_type_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='license_type',
+        queryset=LicenseType.objects.all(),
+        label="License Type (ID)"
+    )
+    volume_type = django_filters.MultipleChoiceFilter(
+        field_name='license_type__volume_type',
         choices=LicenseType.VOLUME_TYPE_CHOICES,
         label="Volume Type"
     )
@@ -93,6 +103,11 @@ class LicenseFilterSet(NetBoxModelFilterSet):
     parent_license = django_filters.ModelChoiceFilter(
         queryset=License.objects.filter(parent_license__isnull=True),
         label="Parent License"
+    )
+    parent_license_type = django_filters.ModelMultipleChoiceFilter(
+        field_name='parent_license__license_type',
+        queryset=LicenseType.objects.all(),
+        label="Parent License Type"
     )
 
     child_license = django_filters.ModelMultipleChoiceFilter(
@@ -120,9 +135,10 @@ class LicenseFilterSet(NetBoxModelFilterSet):
     class Meta:
         model = License
         fields = [
-            "license_key", "serial_number", "name", "manufacturer", "volume_type",
-            "purchase_date", "expiry_date", "parent_license", "child_license",
-            "is_parent_license", "is_child_license",
+            "license_key", "serial_number", "name", "manufacturer", "license_type_id",
+            "volume_type", "license_model", "parent_license", "parent_license_type",
+            "child_license", "is_parent_license", "is_child_license",
+            "purchase_date", "expiry_date",
         ]
 
     def filter_is_parent_license(self, queryset, name, value):
@@ -148,7 +164,11 @@ class LicenseAssignmentFilterSet(NetBoxModelFilterSet):
         queryset=License.objects.all(),
         label="License"
     )
-
+    license__license_type_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="license__license_type",
+        queryset=LicenseType.objects.all(),
+        label="License Type (ID)"
+    )
     device = django_filters.ModelChoiceFilter(queryset=Device.objects.all(), label="Device")
     
     virtual_machine = django_filters.ModelChoiceFilter(queryset=VirtualMachine.objects.all(), label="Virtual Machine")
@@ -158,24 +178,20 @@ class LicenseAssignmentFilterSet(NetBoxModelFilterSet):
         queryset=Manufacturer.objects.all(),
         label="License Manufacturer"
     )
-
     device_manufacturer_id = django_filters.ModelChoiceFilter(
         field_name="device__device_type__manufacturer",
         queryset=Manufacturer.objects.all(),
         label="Device Manufacturer"
     )
-
     device_id = django_filters.ModelMultipleChoiceFilter(
         field_name='device',
         queryset=Device.objects.all(),
         label="Device (ID)"
     )
-
     virtual_machine_id = django_filters.ModelChoiceFilter(
         queryset=VirtualMachine.objects.all(),
         label="Virtual Machine"
     )
-
     virtual_machine__cluster_id = django_filters.ModelMultipleChoiceFilter(
         field_name='virtual_machine__cluster',
         queryset=Cluster.objects.all(),

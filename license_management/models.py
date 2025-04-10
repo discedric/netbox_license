@@ -22,6 +22,16 @@ class LicenseType(NetBoxModel):
         ("PERIPHERAL", "Peripheral"),
         ("SUBSCRIPTION", "Subscription"),
     ]
+    LICENSE_MODEL_CHOICES = [
+        ("BASE", "Base License"),
+        ("EXPANSION", "Expansion Pack"),
+    ]
+    VOLUME_RELATION_CHOICES = [
+        ("CPU", "CPU"),
+        ("CORES", "Cores"),
+        ("USERS", "Users"),
+        ("PRINTERS", "Printers"),
+    ]
 
     name = models.CharField(max_length=255)
 
@@ -44,10 +54,13 @@ class LicenseType(NetBoxModel):
 
     volume_type = models.CharField(max_length=20, choices=VOLUME_TYPE_CHOICES)
 
-    LICENSE_MODEL_CHOICES = [
-        ("BASE", "Base License"),
-        ("EXPANSION", "Expansion Pack"),
-    ]
+    volume_relation = models.CharField(
+        max_length=20,
+        choices=VOLUME_RELATION_CHOICES,
+        blank=True,
+        null=True,
+        help_text="What the license volume applies to (e.g., Users, Cores, etc.)."
+    )
 
     license_model = models.CharField(
         max_length=20,

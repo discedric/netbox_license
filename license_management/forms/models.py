@@ -28,6 +28,11 @@ class LicenseTypeForm(NetBoxModelForm):
         required=True,
         label="Volume Type"
     )
+    volume_relation = forms.ChoiceField(
+        choices=LicenseType.VOLUME_RELATION_CHOICES,
+        required=False,
+        label="Volume Relation"
+    )
 
     license_model = forms.ChoiceField(
         choices= LicenseType.LICENSE_MODEL_CHOICES,
@@ -66,7 +71,7 @@ class LicenseTypeForm(NetBoxModelForm):
         model = LicenseType
         fields = [
             "name", "slug", "manufacturer", "product_code", "ean_code",
-            "volume_type", "license_model", "base_license",
+            "volume_type", "volume_relation", "license_model", "base_license",
             "purchase_model", "description", "comments"
         ]
 

@@ -80,6 +80,7 @@ class LicenseFilterForm(NetBoxModelFilterSetForm):
     fieldsets = (
         FieldSet('q', name='Search'),
         FieldSet('manufacturer_id', 'license_key', name='License Info'),
+        FieldSet('license_model', 'volume_type', 'license_type_id', name='License Type Info'),
         FieldSet('is_parent_license', 'is_child_license', 'parent_license', 'child_license', name='License Relationship'),
         FieldSet('purchase_date_after', 'purchase_date_before', 'expiry_date_after', 'expiry_date_before', name='Dates'),
     )
@@ -88,6 +89,27 @@ class LicenseFilterForm(NetBoxModelFilterSetForm):
         queryset=Manufacturer.objects.all(),
         required=False,
         label="License Manufacturer"
+    )
+
+    volume_type = forms.MultipleChoiceField(
+        required=False,
+        label="Volume Type",
+        choices=LicenseType.VOLUME_TYPE_CHOICES,
+        widget=forms.SelectMultiple()
+    )
+
+    license_model = forms.MultipleChoiceField(
+        required=False,
+        label="License Model",
+        choices=LicenseType.LICENSE_MODEL_CHOICES,
+        widget=forms.SelectMultiple()
+    )
+
+    license_type_id = DynamicModelMultipleChoiceField(
+        required=False,
+        label="License Type",
+        queryset=LicenseType.objects.all(),
+        query_params={'manufacturer_id': '$manufacturer_id'}
     )
 
     parent_license = DynamicModelChoiceField(
