@@ -1,6 +1,6 @@
 from netbox.views import generic
 from utilities.views import register_model_view
-from ..models import License, LicenseAssignment
+from ..models import LicenseAssignment
 from virtualization.models import VirtualMachine
 from .. import filtersets, tables, forms
 from django.http import HttpResponse

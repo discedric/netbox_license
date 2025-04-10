@@ -24,6 +24,7 @@ class LicenseTypeFilterForm(NetBoxModelFilterSetForm):
             name='Details'
         ),
     )
+    
 
     manufacturer_id = DynamicModelMultipleChoiceField(
         queryset=Manufacturer.objects.all(),
@@ -68,6 +69,13 @@ class LicenseTypeFilterForm(NetBoxModelFilterSetForm):
 class LicenseFilterForm(NetBoxModelFilterSetForm):
     model = License
     filterset_class = filtersets.LicenseFilterSet
+
+    selecterfields = (
+        'manufacturer_id',
+        'volume_type',
+        'license_model',
+        'LicenseType',
+        )
 
     fieldsets = (
         FieldSet('q', name='Search'),

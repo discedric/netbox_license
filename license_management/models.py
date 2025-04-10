@@ -174,14 +174,17 @@ class License(NetBoxModel):
         verbose_name_plural = "Licenses"
 
     def get_expiry_progress(self):
+        if not self.expiry_date or not self.purchase_date:
+            return None
 
         days_left = self.expiry_remaining.days
         if days_left < 0:
             color = "danger"
         elif days_left < 90:
             color = "warning"
-        else :
+        else:
             color = "success"
+
         return {
             "percent": self.expiry_progress,
             "days_left": days_left,

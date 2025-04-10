@@ -18,7 +18,11 @@ LICENSE_EXPIRY_PROGRESSBAR_TABLE = """
     {% endif %}
   </div>
 {% else %}
-  <span class="text-muted">N/A</span>
+<div class="progress position-relative" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
+  <div class="progress-bar bg-info" style="width: 100%;">
+    <span class="text-white fw-bold">&#8734;</span>
+  </div>
+</div>
 {% endif %}
 {% endwith %}
 """
