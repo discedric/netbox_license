@@ -13,6 +13,11 @@ class LicenseTypeTable(NetBoxTable):
         verbose_name="Manufacturer",
         linkify=True
     )
+    instances = tables.Column(
+        verbose_name="Instances",
+        accessor="license_count",
+        order_by="license_count",
+    )
     product_code = tables.Column(verbose_name="Product Code")
     ean_code = tables.Column(verbose_name="EAN Code")
     volume_type = tables.Column(verbose_name="Volume Type")
@@ -23,18 +28,21 @@ class LicenseTypeTable(NetBoxTable):
     class Meta(NetBoxTable.Meta):
         model = LicenseType
         fields = (
-            "name", "slug", "manufacturer",
+            "id", "name", "slug", "manufacturer",
             "product_code", "ean_code",
             "volume_type", "license_model", "purchase_model",
             "description"
         )
-        default_columns = fields
-        attrs = {"class": "table table-striped table-bordered"}
+        default_columns = (
+        "name", "manufacturer",
+        "product_code", "volume_type",
+        "license_model", "instances",
+    )
 
 # ---------- License ----------
 
 class LicenseTable(NetBoxTable):
-    name = tables.Column(
+    license_type = tables.Column(
         accessor="license_type.name",
         linkify=lambda record: record.license_type.get_absolute_url(),
         verbose_name="License Type"
@@ -52,6 +60,12 @@ class LicenseTable(NetBoxTable):
         verbose_name="Parent License",
         linkify=True
     )
+    parent_license_type = tables.Column(
+        verbose_name="Parent License Type",
+        accessor="parent_license.license_type.name",
+        linkify=True,
+        order_by="parent_license__license_type__name"
+    )
 
     volume_type = tables.Column(verbose_name="Volume Type", empty_values=())
     is_parent_license = tables.Column(verbose_name='Parent', empty_values=())
@@ -60,7 +74,7 @@ class LicenseTable(NetBoxTable):
 
     expiry_bar = TemplateColumn(
         template_code=LICENSE_EXPIRY_PROGRESSBAR_TABLE,
-        verbose_name="Expiry",
+        verbose_name="Expirty status",
         order_by="expiry_date",
     )
 
@@ -88,14 +102,16 @@ class LicenseTable(NetBoxTable):
     class Meta(NetBoxTable.Meta):
         model = License
         fields = (
-            "name", "license_key", "product_key", "serial_number",
-            "manufacturer", "parent_license",
+            "license_type", "license_key", "product_key", "serial_number",
+            "manufacturer", "parent_license", "parent_license_type",
             "is_parent_license", "is_child_license", "description",
             "assigned_count", "volume_type",
             "expiry_date", "purchase_date", "expiry_bar",
         )
-        default_columns = fields
-        attrs = {"class": "table table-striped table-bordered"}
+        default_columns = (
+        "license_key", "license_type", "manufacturer", "assigned_count",
+        "parent_license", "serial_number", "volume_type"
+    )
 
 # ---------- Assignments ----------
 
@@ -109,6 +125,12 @@ class LicenseAssignmentTable(NetBoxTable):
         accessor="license.license_key",
         verbose_name="License Key",
         linkify=True
+    )
+    license_type = tables.Column(
+        accessor='license.license_type',
+        verbose_name='License Type',
+        linkify=True,
+        order_by='license__license_type__name'
     )
     manufacturer = tables.Column(
         accessor="license.manufacturer",
@@ -131,7 +153,7 @@ class LicenseAssignmentTable(NetBoxTable):
         linkify=True
     )
     volume = tables.Column(verbose_name="Volume")
-    assigned_to = tables.Column(verbose_name="Assigned On")
+    assigned_on = tables.Column(verbose_name="Assigned On")
     description = tables.Column(verbose_name="Description")
 
     class Meta(NetBoxTable.Meta):
@@ -140,6 +162,11 @@ class LicenseAssignmentTable(NetBoxTable):
             "license", "license_key", "manufacturer",
             "device", "device_manufacturer",
             "virtual_machine", "volume",
-            "assigned_to", "description"
+            "assigned_on", "description"
         )
-        attrs = {"class": "table table-striped table-bordered"}
+        default_columns = (
+            "license", "license_type",
+            "device", "virtual_machine",
+            "volume",
+        )
+        

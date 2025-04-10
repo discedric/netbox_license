@@ -1,11 +1,12 @@
 from netbox.views import generic
 from utilities.views import register_model_view
 from ..models import LicenseType
-from .. import filtersets, tables, forms
+from .. import filtersets, tables
 from ..forms.filtersets import LicenseTypeFilterForm
 from ..forms.models import LicenseTypeForm
 from ..forms.bulk_edit import LicenseTypeBulkEditForm
 from ..forms.bulk_import import LicenseTypeImportForm
+from django.db.models import Count
 
 __all__ = (
     'LicenseTypeView',
@@ -23,6 +24,7 @@ __all__ = (
 
 @register_model_view(LicenseType)
 class LicenseTypeView(generic.ObjectView):
+    """View for displaying a single License Type"""
     queryset = LicenseType.objects.all()
 
 
@@ -45,7 +47,7 @@ class LicensetypeJournalView(generic.ObjectJournalView):
 
 @register_model_view(LicenseType, 'list', path='', detail=False)
 class LicenseTypeListView(generic.ObjectListView):
-    queryset = LicenseType.objects.all()
+    queryset = LicenseType.objects.annotate(license_count=Count('licenses'))
     table = tables.LicenseTypeTable
     filterset = filtersets.LicenseTypeFilterSet
     filterset_form = LicenseTypeFilterForm

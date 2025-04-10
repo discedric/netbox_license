@@ -122,7 +122,7 @@ class LicenseForm(NetBoxModelForm):
     )
 
     parent_license = DynamicModelChoiceField(
-        queryset=License.objects.all(),
+        queryset=License.objects.filter(license_type__license_model="BASE"),
         required=False,
         label="Parent License",
         help_text="Select a parent license if applicable.",

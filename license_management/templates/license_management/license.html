@@ -19,7 +19,7 @@
       <h5 class="card-header">License Details</h5>
       <table class="table table-hover attr-table">
         <tr>
-          <th scope="row">Software Name</th>
+          <th scope="row">License Type</th>
           <td>{{ object.license_type|linkify }}</td>
         </tr>
         <tr>
@@ -56,20 +56,28 @@
           <th scope="row">Current Usage</th>
           <td>{{ object.usage_display }}</td>
         </tr>
+        {% if object.parent_license %}
         <tr>
           <th scope="row">Parent License</th>
-          <td>{{ object.parent_license|linkify|default:"None" }}</td>
+          <td>{{ object.parent_license|linkify }}</td>
         </tr>
+        {% endif %}
+        {% if object.purchase_date %}
         <tr>
           <th scope="row">Purchase Date</th>
-          <td>{{ object.purchase_date|date:"Y-m-d"|placeholder }}</td>
+          <td>{{ object.purchase_date|date:"Y-m-d" }}</td>
         </tr>
+        {% endif %}
+
+        {% if object.expiry_date %}
         <tr>
           <th scope="row">Expiry Date</th>
-          <td>{{ object.expiry_date|date:"Y-m-d"|placeholder }}</td>
+          <td>{{ object.expiry_date|date:"Y-m-d" }}</td>
         </tr>
+        {% endif %}
+
         <tr>
-          <th scope="row">License end</th>
+          <th scope="row">Expirty status</th>
           <td>
             {% include "license_management/inc/license_progressbar.html" with record=object %}
           </td>

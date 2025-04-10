@@ -40,7 +40,7 @@ class LicenseProgressBarInjector(PluginTemplateExtension):
 class DeviceLicenseExtension(PluginTemplateExtension):
     model = "dcim.device"
 
-    def right_page(self):
+    def left_page(self):
         object = self.context.get("object")
         LicenseAssignment = apps.get_model("license_management", "LicenseAssignment")
         license_assignments = LicenseAssignment.objects.filter(device=object)
@@ -65,7 +65,7 @@ class DeviceLicenseExtension(PluginTemplateExtension):
 class VirtualMachineLicenseExtension(PluginTemplateExtension):
     model = "virtualization.virtualmachine"
 
-    def right_page(self):
+    def left_page(self):
         object = self.context.get("object")
         LicenseAssignment = apps.get_model("license_management", "LicenseAssignment")
         license_assignments = LicenseAssignment.objects.filter(virtual_machine=object)
@@ -90,7 +90,7 @@ class VirtualMachineLicenseExtension(PluginTemplateExtension):
 class ClustersLicenseExtension(PluginTemplateExtension):
     model = "virtualization.cluster"
 
-    def right_page(self):
+    def left_page(self):
         object = self.context.get("object")
         LicenseAssignment = apps.get_model("license_management", "LicenseAssignment")
         license_assignments = LicenseAssignment.objects.filter(virtual_machine__cluster=object)
@@ -117,7 +117,7 @@ class LicenseTypeExtension(PluginTemplateExtension):
     def right_page(self):
         licenses = self.context['object'].licenses.all()
         license_assignments = sum(l.assignments.count() for l in licenses)
-        #licenseassignment = LicenseAssignment.objects.filter(license__in=licenses).count()
+        
         context = {
             "object": self.context["object"],
             "license_assignments": license_assignments,

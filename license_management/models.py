@@ -13,7 +13,7 @@ from taggit.managers import TaggableManager
 
 class LicenseType(NetBoxModel):
     VOLUME_TYPE_CHOICES = [
-        ("SINGLE", "Single "),
+        ("SINGLE", "Single"),
         ("VOLUME", "Volume"),
         ("UNLIMITED", "Unlimited"),
     ]
@@ -225,6 +225,10 @@ class License(NetBoxModel):
         if not self.expiry_date or not self.purchase_date:
             return None
         return int(100* (self.expiry_elapsed / self.expiry_total))
+    
+    class Meta:
+        verbose_name = "Licenses"
+        verbose_name_plural = "Licenses"
 
 # ---------- Assignments ----------
 
@@ -308,3 +312,8 @@ class LicenseAssignment(NetBoxModel):
 
     def get_absolute_url(self):
         return reverse("plugins:license_management:licenseassignment", args=[self.pk])
+    
+    class Meta:
+        verbose_name = "License Assignments"
+        verbose_name_plural = "License Assignments"
+        
