@@ -29,7 +29,7 @@ class LicenseTypeForm(NetBoxModelForm):
         label="Volume Type"
     )
     volume_relation = forms.ChoiceField(
-        choices=LicenseType.VOLUME_RELATION_CHOICES,
+        choices=[('', '---------')] + LicenseType.VOLUME_RELATION_CHOICES,
         required=False,
         label="Volume Relation"
     )
