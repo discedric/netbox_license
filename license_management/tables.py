@@ -1,6 +1,8 @@
 from django.db.models import Sum
 from django_tables2 import tables, TemplateColumn
 from netbox.tables import NetBoxTable
+from django.urls import reverse
+from django.utils.html import format_html
 from .models import License, LicenseAssignment, LicenseType
 from .template_content import LICENSE_EXPIRY_PROGRESSBAR_TABLE
 
@@ -9,15 +11,19 @@ from .template_content import LICENSE_EXPIRY_PROGRESSBAR_TABLE
 class LicenseTypeTable(NetBoxTable):
     name = tables.Column(linkify=True)
     slug = tables.Column()
-    manufacturer = tables.Column(
-        verbose_name="Manufacturer",
-        linkify=True
-    )
+    manufacturer = tables.Column(verbose_name="Manufacturer", linkify=True)
+
     instances = tables.Column(
         verbose_name="Instances",
         accessor="license_count",
         order_by="license_count",
+        empty_values=(),
     )
+
+    def render_instances(self, value, record):
+        url = reverse('plugins:license_management:license_list') + f'?license_type_id={record.pk}'
+        return format_html('<a href="{}">{}</a>', url, value)
+
     product_code = tables.Column(verbose_name="Product Code")
     ean_code = tables.Column(verbose_name="EAN Code")
     volume_type = tables.Column(verbose_name="Volume Type")
@@ -31,14 +37,14 @@ class LicenseTypeTable(NetBoxTable):
         fields = (
             "id", "name", "slug", "manufacturer",
             "product_code", "ean_code",
-            "volume_type", "volume_relation","license_model", "purchase_model",
+            "volume_type", "volume_relation", "license_model", "purchase_model",
             "description"
         )
         default_columns = (
-        "name", "manufacturer",
-        "product_code", "volume_type",
-        "license_model", "instances",
-    )
+            "name", "manufacturer",
+            "product_code", "volume_type",
+            "license_model", "instances",
+        )
 
 # ---------- License ----------
 
@@ -96,10 +102,14 @@ class LicenseTable(NetBoxTable):
         volume_type = getattr(record.license_type, 'volume_type', None)
 
         if volume_type == "UNLIMITED":
-            return f"{assigned}/∞"
+            display = f"{assigned}/∞"
         elif volume_type == "VOLUME":
-            return f"{assigned}/{record.volume_limit or '∞'}"
-        return f"{assigned}/1"
+            display = f"{assigned}/{record.volume_limit or '∞'}"
+        else:
+            display = f"{assigned}/1"
+
+        url = reverse('plugins:license_management:licenseassignment_list') + f'?license={record.pk}'
+        return format_html('<a href="{}">{}</a>', url, display)
 
     def render_volume_type(self, record):
         return getattr(record.license_type, 'get_volume_type_display', lambda: '—')()
@@ -128,11 +138,7 @@ class LicenseTable(NetBoxTable):
 # ---------- Assignments ----------
 
 class LicenseAssignmentTable(NetBoxTable):
-    license = tables.Column(
-        accessor="license",
-        verbose_name="License",
-        linkify=True
-    )
+    
     license_key = tables.Column(
         accessor="license.license_key",
         verbose_name="License Key",
@@ -177,13 +183,13 @@ class LicenseAssignmentTable(NetBoxTable):
     class Meta(NetBoxTable.Meta):
         model = LicenseAssignment
         fields = (
-            "license", "license_key", "manufacturer",
+            "license_key", "manufacturer",
             "device", "device_manufacturer",
             "virtual_machine", "volume", "volume_relation",
             "assigned_on", "description"
         )
         default_columns = (
-            "license", "license_type",
+            "license_key", "license_type",
             "device", "virtual_machine",
             "volume",
         )

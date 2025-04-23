@@ -47,7 +47,7 @@ class LicensetypeJournalView(generic.ObjectJournalView):
 
 @register_model_view(LicenseType, 'list', path='', detail=False)
 class LicenseTypeListView(generic.ObjectListView):
-    queryset = LicenseType.objects.annotate(license_count=Count('licenses'))
+    queryset = LicenseType.objects.annotate(license_count=Count('licenses', distinct=True))
     table = tables.LicenseTypeTable
     filterset = filtersets.LicenseTypeFilterSet
     filterset_form = LicenseTypeFilterForm

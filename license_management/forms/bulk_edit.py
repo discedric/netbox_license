@@ -2,11 +2,29 @@ from django import forms
 from license_management.models import License, LicenseType, LicenseAssignment
 from dcim.models import Device, Manufacturer
 from virtualization.models import VirtualMachine, Cluster
+from ..choices import (
+    VolumeTypeChoices,
+    PurchaseModelChoices,
+    LicenseModelChoices,
+    VolumeRelationChoices,
+    LicenseStatusChoices,
+    LicenseAssignmentStatusChoices
+)
 from netbox.forms import NetBoxModelBulkEditForm
-from utilities.forms.fields import DynamicModelChoiceField, CommentField, SlugField
+from utilities.forms.fields import DynamicModelChoiceField, CommentField
 
 
 # ---------- LicenseType ----------
+
+from django import forms
+from netbox.forms import NetBoxModelBulkEditForm
+from utilities.forms.fields import CommentField, DynamicModelChoiceField
+from license_management.models import LicenseType, Manufacturer
+from license_management.choices import (
+    VolumeTypeChoices,
+    LicenseModelChoices,
+    PurchaseModelChoices
+)
 
 class LicenseTypeBulkEditForm(NetBoxModelBulkEditForm):
     model = LicenseType
@@ -34,30 +52,36 @@ class LicenseTypeBulkEditForm(NetBoxModelBulkEditForm):
     )
 
     volume_type = forms.ChoiceField(
-        choices=[('', '---------')] + LicenseType.VOLUME_TYPE_CHOICES,
+        choices=[('', '---------')] + list(VolumeTypeChoices),
         required=False,
         label="Volume Type"
     )
 
+    volume_relation = forms.ChoiceField(
+        choices=[('', '---------')] + list(VolumeRelationChoices),
+        required=False,
+        label="Volume Relation"
+    )
+
     license_model = forms.ChoiceField(
-        choices=LicenseType.LICENSE_MODEL_CHOICES,
+        choices=[('', '---------')] + list(LicenseModelChoices),
         required=False,
         label="License Model"
     )
 
     base_license = DynamicModelChoiceField(
-        queryset=LicenseType.objects.filter(license_model="BASE"),
+        queryset=LicenseType.objects.filter(license_model=LicenseModelChoices.BASE),
         required=False,
         label="Base License",
         selector=True,
         query_params={
-            "license_model": "BASE",
+            "license_model": LicenseModelChoices.BASE,
             "manufacturer_id": "$manufacturer",
         }
     )
 
     purchase_model = forms.ChoiceField(
-        choices=[('', '---------')] + LicenseType.PURCHASE_MODEL_CHOICES,
+        choices=[('', '---------')] + list(PurchaseModelChoices),
         required=False,
         label="Purchase Model"
     )
@@ -73,9 +97,10 @@ class LicenseTypeBulkEditForm(NetBoxModelBulkEditForm):
     class Meta:
         fields = (
             "name", "manufacturer", "product_code", "ean_code",
-            "volume_type", "license_model", "base_license",
+            "volume_type", "volume_relation", "license_model", "base_license",
             "purchase_model", "description", "comments", "tags"
         )
+
 
 # ---------- License ----------
 

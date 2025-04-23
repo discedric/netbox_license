@@ -6,33 +6,21 @@ from django.utils.timezone import now
 from django.urls import reverse
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
-from datetime import date, timedelta
+from datetime import date
 from taggit.managers import TaggableManager
+from .choices import (
+    VolumeTypeChoices,
+    PurchaseModelChoices,
+    LicenseModelChoices,
+    VolumeRelationChoices,
+    LicenseStatusChoices,
+    LicenseAssignmentStatusChoices
+)
+
 
 # ---------- LicenseType ----------
 
 class LicenseType(NetBoxModel):
-    VOLUME_TYPE_CHOICES = [
-        ("SINGLE", "Single"),
-        ("VOLUME", "Volume"),
-        ("UNLIMITED", "Unlimited"),
-    ]
-
-    PURCHASE_MODEL_CHOICES = [
-        ("PERIPHERAL", "Peripheral"),
-        ("SUBSCRIPTION", "Subscription"),
-    ]
-    LICENSE_MODEL_CHOICES = [
-        ("BASE", "Base License"),
-        ("EXPANSION", "Expansion Pack"),
-    ]
-    VOLUME_RELATION_CHOICES = [
-        ("CPU", "CPU"),
-        ("CORES", "Cores"),
-        ("USERS", "Users"),
-        ("PRINTERS", "Printers"),
-    ]
-
     name = models.CharField(max_length=255)
 
     slug = models.SlugField(unique=True)
@@ -52,11 +40,14 @@ class LicenseType(NetBoxModel):
     null=True
 )
 
-    volume_type = models.CharField(max_length=20, choices=VOLUME_TYPE_CHOICES)
+    volume_type = models.CharField(
+        max_length=20, 
+        choices=VolumeTypeChoices
+    )
 
     volume_relation = models.CharField(
         max_length=20,
-        choices=VOLUME_RELATION_CHOICES,
+        choices=VolumeRelationChoices,
         blank=True,
         null=True,
         help_text="What the license volume applies to (e.g., Users, Cores, etc.)."
@@ -64,7 +55,7 @@ class LicenseType(NetBoxModel):
 
     license_model = models.CharField(
         max_length=20,
-        choices=LICENSE_MODEL_CHOICES,
+        choices=LicenseModelChoices,
         default="BASE"
     )
     base_license = models.ForeignKey(
@@ -75,7 +66,7 @@ class LicenseType(NetBoxModel):
         related_name="expansions",
         help_text="Only for expansion licenses. Must reference a base license."
     )
-    purchase_model = models.CharField(max_length=20, choices=PURCHASE_MODEL_CHOICES, blank=True, null=True)
+    purchase_model = models.CharField(max_length=20, choices=PurchaseModelChoices, blank=True, null=True)
     description = models.CharField(max_length=255, blank=True, null=True)
     comments = models.TextField(blank=True, null=True)
 

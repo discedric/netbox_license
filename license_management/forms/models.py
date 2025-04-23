@@ -5,6 +5,14 @@ from utilities.forms.rendering import FieldSet, TabbedGroups
 from dcim.models import Manufacturer, Device
 from virtualization.models import VirtualMachine
 from license_management.models import License, LicenseType, LicenseAssignment
+from ..choices import (
+    VolumeTypeChoices,
+    PurchaseModelChoices,
+    LicenseModelChoices,
+    VolumeRelationChoices,
+    LicenseStatusChoices,
+    LicenseAssignmentStatusChoices
+)
 
 __all__ = (
     'LicenseForm',
@@ -24,24 +32,24 @@ class LicenseTypeForm(NetBoxModelForm):
     )
 
     volume_type = forms.ChoiceField(
-        choices=[('', '---------')] + LicenseType.VOLUME_TYPE_CHOICES,
+        choices= VolumeTypeChoices,
         required=True,
         label="Volume Type"
     )
     volume_relation = forms.ChoiceField(
-        choices=[('', '---------')] + LicenseType.VOLUME_RELATION_CHOICES,
+        choices=[('', '---------')] + list(VolumeRelationChoices),
         required=False,
         label="Volume Relation"
     )
 
     license_model = forms.ChoiceField(
-        choices= LicenseType.LICENSE_MODEL_CHOICES,
+        choices= LicenseModelChoices,
         required=True,
         label="License Model"
     )
 
     base_license = DynamicModelChoiceField(
-        queryset=LicenseType.objects.filter(license_model="BASE"),
+        queryset=LicenseType.objects.filter(license_model="base"),
         required=False,
         label="Base License",
         help_text="Select a base license if this is an expansion pack.",
@@ -53,7 +61,7 @@ class LicenseTypeForm(NetBoxModelForm):
     )
 
     purchase_model = forms.ChoiceField(
-        choices=[('', '---------')] + LicenseType.PURCHASE_MODEL_CHOICES,
+        choices=PurchaseModelChoices,
         required=True,
         label="Purchase Model"
     )

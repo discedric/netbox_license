@@ -8,6 +8,7 @@ class LicenseManagementConfig(PluginConfig):
     verbose_name = 'License Management'
     version = __version__
     description = 'Inventory License management in NetBox'
+    base_url = 'license'
     author = 'Kobe Naessens'
     author_email = 'kobe.naessens@zabun.be'
     min_version = '4.1.0'

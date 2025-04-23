@@ -2,6 +2,14 @@ import django_filters
 from django.utils.translation import gettext as _
 from django.db.models import Q
 from .models import License, LicenseAssignment, LicenseType
+from .choices import (
+    VolumeTypeChoices,
+    PurchaseModelChoices,
+    LicenseModelChoices,
+    VolumeRelationChoices,
+    LicenseStatusChoices,
+    LicenseAssignmentStatusChoices
+)
 from netbox.filtersets import NetBoxModelFilterSet
 from dcim.models import Manufacturer, Device
 from virtualization.models import VirtualMachine, Cluster
@@ -23,7 +31,7 @@ class LicenseTypeFilterSet(NetBoxModelFilterSet):
     )
 
     license_model = django_filters.ChoiceFilter(
-        choices=LicenseType.LICENSE_MODEL_CHOICES,
+        choices=LicenseModelChoices,
         label="License Model"
     )
 
@@ -36,8 +44,8 @@ class LicenseTypeFilterSet(NetBoxModelFilterSet):
     slug = django_filters.CharFilter(lookup_expr='icontains', label="Slug")
     product_code = django_filters.CharFilter(lookup_expr='icontains', label="Product Code")
     ean_code = django_filters.CharFilter(lookup_expr='icontains', label="EAN Code")
-    volume_type = django_filters.ChoiceFilter(choices=LicenseType.VOLUME_TYPE_CHOICES, label="Volume Type")
-    purchase_model = django_filters.ChoiceFilter(choices=LicenseType.PURCHASE_MODEL_CHOICES, label="Purchase Model")
+    volume_type = django_filters.ChoiceFilter(choices=VolumeTypeChoices, label="Volume Type")
+    purchase_model = django_filters.ChoiceFilter(choices=PurchaseModelChoices, label="Purchase Model")
 
     class Meta:
         model = LicenseType
@@ -71,7 +79,7 @@ class LicenseFilterSet(NetBoxModelFilterSet):
     )
     license_model = django_filters.MultipleChoiceFilter(
         field_name='license_type__license_model',
-        choices=LicenseType.LICENSE_MODEL_CHOICES,
+        choices=LicenseModelChoices,
         label='License Model'
     )
     license_type_id = django_filters.ModelMultipleChoiceFilter(
@@ -81,7 +89,7 @@ class LicenseFilterSet(NetBoxModelFilterSet):
     )
     volume_type = django_filters.MultipleChoiceFilter(
         field_name='license_type__volume_type',
-        choices=LicenseType.VOLUME_TYPE_CHOICES,
+        choices=VolumeTypeChoices,
         label="Volume Type"
     )
 
@@ -164,14 +172,25 @@ class LicenseAssignmentFilterSet(NetBoxModelFilterSet):
         queryset=License.objects.all(),
         label="License"
     )
+    license_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='license',
+        queryset=License.objects.all(),
+        label='License (ID)'
+    )
     license__license_type_id = django_filters.ModelMultipleChoiceFilter(
         field_name="license__license_type",
         queryset=LicenseType.objects.all(),
         label="License Type (ID)"
     )
-    device = django_filters.ModelChoiceFilter(queryset=Device.objects.all(), label="Device")
+    device = django_filters.ModelChoiceFilter(
+        queryset=Device.objects.all(), 
+        label="Device"
+    )
     
-    virtual_machine = django_filters.ModelChoiceFilter(queryset=VirtualMachine.objects.all(), label="Virtual Machine")
+    virtual_machine = django_filters.ModelChoiceFilter(
+        queryset=VirtualMachine.objects.all(),
+        label="Virtual Machine"
+    )
 
     manufacturer_id = django_filters.ModelChoiceFilter(
         field_name="license__manufacturer",
@@ -198,8 +217,12 @@ class LicenseAssignmentFilterSet(NetBoxModelFilterSet):
         label="Cluster"
     )
 
-    assigned_to = django_filters.DateFromToRangeFilter(label="Assigned Date (Between)")
-    volume = django_filters.NumberFilter(label="Volume")
+    assigned_to = django_filters.DateFromToRangeFilter(
+        label="Assigned Date (Between)"
+    )
+    volume = django_filters.NumberFilter(
+        label="Volume"
+    )
 
     class Meta:
         model = LicenseAssignment
