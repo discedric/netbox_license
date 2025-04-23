@@ -56,7 +56,7 @@ class LicenseType(NetBoxModel):
     license_model = models.CharField(
         max_length=20,
         choices=LicenseModelChoices,
-        default="BASE"
+        default="base"
     )
     base_license = models.ForeignKey(
         'self',
@@ -76,9 +76,9 @@ class LicenseType(NetBoxModel):
         if self.license_model == "EXPANSION":
             if not self.base_license:
                 raise ValidationError({"base_license": "An Expansion license type must reference a Base license."})
-            if self.base_license.license_model != "BASE":
-                raise ValidationError({"base_license": "Base License must be of type 'BASE'."})
-        elif self.license_model == "BASE":
+            if self.base_license.license_model != "base":
+                raise ValidationError({"base_license": "Base License must be of type 'base'."})
+        elif self.license_model == "base":
             if self.base_license is not None:
                 raise ValidationError({"base_license": "Only Expansion licenses can reference a base license."})
 

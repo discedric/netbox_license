@@ -30,13 +30,14 @@ class LicenseTypeFilterSet(NetBoxModelFilterSet):
         label="Manufacturer name (slug)"
     )
 
-    license_model = django_filters.ChoiceFilter(
+    license_model = django_filters.MultipleChoiceFilter(
         choices=LicenseModelChoices,
         label="License Model"
     )
 
+
     base_license = django_filters.ModelMultipleChoiceFilter(
-        queryset=LicenseType.objects.filter(license_model="BASE"),
+        queryset=LicenseType.objects.filter(license_model="base"),
         label="Base License"
     )
 

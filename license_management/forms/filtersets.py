@@ -32,7 +32,6 @@ class LicenseTypeFilterForm(NetBoxModelFilterSetForm):
             name='Details'
         ),
     )
-    
 
     manufacturer_id = DynamicModelMultipleChoiceField(
         queryset=Manufacturer.objects.all(),
@@ -40,30 +39,33 @@ class LicenseTypeFilterForm(NetBoxModelFilterSetForm):
         label="Manufacturer"
     )
 
-    volume_type = forms.ChoiceField(
+    volume_type = forms.MultipleChoiceField(
         choices=VolumeTypeChoices,
         required=False,
-        label="Volume Type"
+        label="Volume Type",
+        widget=forms.SelectMultiple()
     )
 
-    license_model = forms.ChoiceField(
+    license_model = forms.MultipleChoiceField(
         choices=LicenseModelChoices,
         required=False,
-        label="License Model"
+        label="License Model",
+        widget=forms.SelectMultiple()
     )
 
-    purchase_model = forms.ChoiceField(
+    purchase_model = forms.MultipleChoiceField(
         choices=PurchaseModelChoices,
         required=False,
-        label="Purchase Model"
+        label="Purchase Model",
+        widget=forms.SelectMultiple()
     )
 
     base_license = DynamicModelMultipleChoiceField(
-        queryset=LicenseType.objects.filter(license_model="base"),
+        queryset=LicenseType.objects.filter(license_model="BASE"),
         required=False,
         label="Base License",
         query_params={
-            "license_model": "BASE",
+            "license_model": LicenseModelChoices.BASE,
         }
     )
 
@@ -71,6 +73,7 @@ class LicenseTypeFilterForm(NetBoxModelFilterSetForm):
         required=False,
         label='Search'
     )
+
 
 # ---------- License ----------
 

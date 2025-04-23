@@ -92,13 +92,13 @@ class LicenseTypeBulkEditForm(NetBoxModelBulkEditForm):
         label="Description"
     )
 
-    comments = CommentField()
+    comment = CommentField()
 
     class Meta:
         fields = (
             "name", "manufacturer", "product_code", "ean_code",
             "volume_type", "volume_relation", "license_model", "base_license",
-            "purchase_model", "description", "comments", "tags"
+            "purchase_model", "description", "comment", "tags"
         )
 
 
@@ -206,10 +206,18 @@ class LicenseAssignmentBulkEditForm(NetBoxModelBulkEditForm):
         label="Description"
     )
 
-    comments = CommentField()
+    comment = CommentField()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        manufacturer = self.initial.get("manufacturer") or self.data.get("manufacturer")
+        if manufacturer:
+            self.fields["license"].queryset = License.objects.filter(manufacturer=manufacturer)
+
 
     class Meta:
         fields = [
             "manufacturer", "license", "device", "virtual_machine",
-            "volume", "description", "comments"
+            "volume", "description", "comment"
         ]

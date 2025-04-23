@@ -100,16 +100,19 @@ class LicenseTable(NetBoxTable):
     def render_assigned_count(self, record):
         assigned = record.assignments.aggregate(total=Sum('volume'))['total'] or 0
         volume_type = getattr(record.license_type, 'volume_type', None)
+        volume_limit = record.volume_limit
 
         if volume_type == "UNLIMITED":
-            display = f"{assigned}/∞"
+            max_str = "∞"
         elif volume_type == "VOLUME":
-            display = f"{assigned}/{record.volume_limit or '∞'}"
+            max_str = volume_limit if volume_limit is not None else "∞"
         else:
-            display = f"{assigned}/1"
+            max_str = 1
 
         url = reverse('plugins:license_management:licenseassignment_list') + f'?license={record.pk}'
-        return format_html('<a href="{}">{}</a>', url, display)
+        return format_html(f'<a href="{url}">{assigned}/{max_str}</a>')
+    
+
 
     def render_volume_type(self, record):
         return getattr(record.license_type, 'get_volume_type_display', lambda: '—')()
