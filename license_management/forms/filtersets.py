@@ -204,7 +204,6 @@ class LicenseAssignmentFilterForm(NetBoxModelFilterSetForm):
         required=False,
         label="License",
         query_params={'manufacturer_id': '$manufacturer_id'},
-        display_field="license_key",
     )
 
     device_id = DynamicModelMultipleChoiceField(
