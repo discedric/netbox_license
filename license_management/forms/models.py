@@ -2,6 +2,7 @@ from django import forms
 from netbox.forms import NetBoxModelForm
 from utilities.forms.fields import DynamicModelChoiceField, CommentField, SlugField
 from utilities.forms.rendering import FieldSet, TabbedGroups
+from django.utils.html import format_html
 from dcim.models import Manufacturer, Device
 from virtualization.models import VirtualMachine
 from license_management.models import License, LicenseType, LicenseAssignment
@@ -154,9 +155,33 @@ class LicenseForm(NetBoxModelForm):
         model = License
         fields = [
             "manufacturer", "license_type", "license_key", "serial_number",
+            "description", "volume_limit", "parent_license",
+            "purchase_date", "expiry_date", "comment"
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        license_type = getattr(self.instance, "license_type", None)
+        if license_type:
+            volume_type_display_value = license_type.get_volume_type_display()
+        else:
+            volume_type_display_value = ""
+
+        self.fields["volume_type_display"] = forms.CharField(
+            required=False,
+            label="Volume Type",
+            disabled=True,
+            initial=volume_type_display_value,
+        )
+
+        self.order_fields([
+            "manufacturer", "license_type", "volume_type_display", "license_key", "serial_number",
             "description", "volume_limit", "parent_license", "purchase_date",
             "expiry_date", "comment"
-        ]
+        ])
+
+
 
 # ---------- Assignments ----------
 
@@ -219,9 +244,34 @@ class LicenseAssignmentForm(NetBoxModelForm):
             or self.initial.get("manufacturer")
             or getattr(self.instance, "manufacturer", None)
         )
+        license_id = self.data.get("license") or self.initial.get("license")
+        device_id = self.data.get("device") or self.initial.get("device")
+        vm_id = self.data.get("virtual_machine") or self.initial.get("virtual_machine")
 
         if manufacturer:
-            self.fields["license"].queryset = License.objects.filter(manufacturer=manufacturer)
+            licenses = License.objects.filter(manufacturer=manufacturer)
+            self.fields["license"].queryset = licenses
+
+            def label_from_instance(obj):
+                serial = obj.serial_number or ""
+                return format_html(
+                    '{}<br><small class="text-muted">{}</small>',
+                    obj.license_key,
+                    serial
+                )
+            self.fields["license"].label_from_instance = label_from_instance
+
+        if not self.instance.pk:
+            if license_id:
+                self.fields["license"].initial = license_id
+                if not self.fields["license"].queryset.exists():
+                    self.fields["license"].queryset = License.objects.filter(pk=license_id)
+
+            if device_id:
+                self.fields["device"].initial = device_id
+
+            if vm_id:
+                self.fields["virtual_machine"].initial = vm_id
 
         if self.instance.pk:
             for field in ["manufacturer", "license", "device", "virtual_machine"]:

@@ -137,6 +137,23 @@ class LicenseFilterSet(NetBoxModelFilterSet):
         label='Is Child License'
     )
     
+    assignments__device_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='assignments__device',
+        queryset=Device.objects.all(),
+        label='Assigned to Device (ID)',
+    )
+
+    assignments__virtual_machine_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='assignments__virtual_machine',
+        queryset=VirtualMachine.objects.all(),
+        label='Assigned to VM (ID)',
+    )
+
+    assignments__virtual_machine__cluster_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='assignments__virtual_machine__cluster',
+        queryset=Cluster.objects.all(),
+        label='Assigned to Cluster (ID)',
+    )
 
     purchase_date = django_filters.DateFromToRangeFilter(label="Purchase Date (Between)")
     expiry_date = django_filters.DateFromToRangeFilter(label="Expiry Date (Between)")

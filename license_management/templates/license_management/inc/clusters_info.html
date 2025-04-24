@@ -1,17 +1,31 @@
 {% load helpers %}
 
 <div class="card">
-  <h5 class="card-header">Related Objects</h5>
-  <table class="table table-hover table-headings">
+  <h5 class="card-header d-flex justify-content-between align-items-center">
+    License Management
+  </h5>
+  <table class="table table-hover table-headings mb-0">
     <tbody>
       <tr>
         <td>
           <a href="{% url 'plugins:license_management:licenseassignment_list' %}?virtual_machine__cluster_id={{ object.id }}">
-            Assigned Licenses
+            Assignments
           </a>
         </td>
         <td class="text-end">
-          <span class="badge bg-primary">{{ licenses|length }}</span>
+          <span class="badge text-bg-primary rounded-pill">{{ licenses|length }}</span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <a href="{% url 'plugins:license_management:license_list' %}?assignments__virtual_machine__cluster_id={{ object.id }}">
+            Licenses
+          </a>
+        </td>
+        <td class="text-end">
+          <span class="badge text-bg-primary rounded-pill">
+            {{ licenses|length }}
+          </span>
         </td>
       </tr>
     </tbody>

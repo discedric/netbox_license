@@ -94,7 +94,14 @@
 
   <div class="col-md-6">
     <div class="card">
-      <h5 class="card-header">Assigned Devices ({{ object.usage_display }})</h5>
+      <h2 class="card-header d-flex justify-content-between align-items-center">
+        Assigned Devices ({{ object.usage_display }})
+        <div class="card-actions">
+          <a href="{% url 'plugins:license_management:licenseassignment_add' %}?license={{ object.id }}&manufacturer={{ object.manufacturer.id }}" class="btn btn-ghost-primary btn-sm">
+            <span class="mdi mdi-plus-thick" aria-hidden="true"></span> Add Assignment
+          </a>
+        </div>
+      </h2>
       <table class="table table-hover">
         <thead>
           <tr>
@@ -122,7 +129,14 @@
     </div>
 
     <div class="card mt-3">
-      <h5 class="card-header">Licenses</h5>
+      <h2 class="card-header d-flex justify-content-between align-items-center">
+        Sub Licenses
+        <div class="card-actions">
+          <a href="{% url 'plugins:license_management:license_add' %}?parent_license={{ object.pk }}&license_type={{ object.license_type.pk }}&manufacturer={{ object.manufacturer.pk }}" class="btn btn-ghost-primary btn-sm">
+            <span class="mdi mdi-plus-thick" aria-hidden="true"></span> Add Sub License
+          </a>
+        </div>
+      </h2>
       <table class="table table-hover">
         <thead>
           <tr>
@@ -154,6 +168,7 @@
         </tbody>
       </table>
     </div>
+    
 
     {% include 'inc/panels/tags.html' %}
     {% include 'inc/panels/comments.html' %}

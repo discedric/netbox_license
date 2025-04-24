@@ -114,15 +114,7 @@ class LicenseTable(NetBoxTable):
         order_by="expiry_date",
     )
 
-    def render_license_key(self, record):
-        if record.serial_number:
-            return format_html(
-                "{}<br><small class='text-muted'>{}</small>",
-                record.license_key,
-                record.serial_number
-            )
-        return record.license_key
-
+    
     def render_volume_type(self, record):
         return getattr(record.license_type, 'get_volume_type_display', lambda: '—')()
 
@@ -166,12 +158,6 @@ class LicenseTable(NetBoxTable):
 
 class LicenseAssignmentTable(NetBoxTable):
     
-    license = tables.Column(
-        verbose_name="License", 
-        accessor="license", 
-        linkify=True
-    )
-
     license_key = tables.Column(
         accessor="license",
         verbose_name="License Key",
@@ -213,32 +199,13 @@ class LicenseAssignmentTable(NetBoxTable):
     assigned_to = tables.Column(verbose_name="Assigned On")
     description = tables.Column(verbose_name="Description")
 
-    def render_license(self, record):
-        license = record.license
-        if license and license.license_type:
-            return f"{license.license_type.name} – {license.license_key}"
-        return str(license) if license else "—"
-
-    def render_license_key(self, record):
-        license = record.license
-        if not license:
-            return "—"
-        
-        if license.serial_number:
-            return format_html(
-                "{}<br><small class='text-muted'>{}</small>",
-                license.license_key,
-                license.serial_number
-            )
-        return license.license_key
-
     class Meta(NetBoxTable.Meta):
         model = LicenseAssignment
         fields = (
-            "license", "license_key", "license_type", "manufacturer",
+            "license_key", "license_type", "manufacturer",
             "device", "device_manufacturer",
             "virtual_machine", "volume", "volume_relation",
-            "assigned_on", "description"
+            "assigned_to", "description"
         )
         default_columns = (
             "license", "device", "virtual_machine", "volume",
