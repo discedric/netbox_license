@@ -55,7 +55,7 @@ class LicenseTypeForm(NetBoxModelForm):
         help_text="Select a base license if this is an expansion pack.",
         selector=True,
         query_params={
-            "license_model": "BASE",
+            'license_type__license_model': LicenseModelChoices.BASE,
             "manufacturer_id": "$manufacturer",
         }
     )
@@ -135,7 +135,7 @@ class LicenseForm(NetBoxModelForm):
     )
 
     parent_license = DynamicModelChoiceField(
-        queryset=License.objects.filter(license_type__license_model="BASE"),
+        queryset=License.objects.filter(license_type__license_model=LicenseModelChoices.BASE),
         required=False,
         label="Parent License",
         help_text="Select a parent license if applicable.",

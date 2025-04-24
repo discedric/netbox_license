@@ -1,5 +1,7 @@
 from netbox.views import generic
 from utilities.views import register_model_view
+from django.db.models import Sum, Case, When, BooleanField, Value
+from django.db.models.functions import Coalesce
 from ..models import License
 from .. import filtersets, tables
 from ..forms.filtersets import LicenseFilterForm
@@ -57,6 +59,24 @@ class LicenseListView(generic.ObjectListView):
     table = tables.LicenseTable
     filterset = filtersets.LicenseFilterSet
     filterset_form = LicenseFilterForm
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+
+        return qs.annotate(
+            is_parent_license_value=Case(
+                When(sub_licenses__isnull=False, then=Value(True)),
+                default=Value(False),
+                output_field=BooleanField()
+            ),
+            is_child_license_value=Case(
+                When(parent_license__isnull=False, then=Value(True)),
+                default=Value(False),
+                output_field=BooleanField()
+            ),
+            assigned_count_value = Coalesce(Sum('assignments__volume'), 0)
+        )
+
 
 
 @register_model_view(License, 'edit')

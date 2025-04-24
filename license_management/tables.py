@@ -79,16 +79,34 @@ class LicenseTable(NetBoxTable):
         order_by="parent_license__license_type__name"
     )
 
-    volume_type = tables.Column(verbose_name="Volume Type", empty_values=())
+    volume_type = tables.Column(
+        accessor="license_type.get_volume_type_display",
+        verbose_name="Volume Type",
+        order_by="license_type__volume_type"
+    )
 
     volume_relation = tables.Column(
         accessor="license_type.volume_relation",
         verbose_name="Volume Relation",
         order_by="license_type__volume_relation"
     )
-    is_parent_license = tables.Column(verbose_name='Parent', empty_values=())
-    is_child_license = tables.Column(verbose_name='Child', empty_values=())
-    assigned_count = tables.Column(empty_values=(), verbose_name="Assigned")
+    is_parent_license = tables.Column(
+        verbose_name='Parent',
+        accessor='is_parent_license_value',
+        order_by='is_parent_license_value'
+    )
+
+    is_child_license = tables.Column(
+        verbose_name='Child',
+        accessor='is_child_license_value',
+        order_by='is_child_license_value'
+    )
+
+    assigned_count = tables.Column(
+        verbose_name='Assigned',
+        accessor='assigned_count_value',
+        order_by='assigned_count_value'
+    )
 
     expiry_bar = TemplateColumn(
         template_code=LICENSE_EXPIRY_PROGRESSBAR_TABLE,
@@ -96,32 +114,38 @@ class LicenseTable(NetBoxTable):
         order_by="expiry_date",
     )
 
+    def render_license_key(self, record):
+        if record.serial_number:
+            return format_html(
+                "{}<br><small class='text-muted'>{}</small>",
+                record.license_key,
+                record.serial_number
+            )
+        return record.license_key
 
+    def render_volume_type(self, record):
+        return getattr(record.license_type, 'get_volume_type_display', lambda: '—')()
+
+    def render_is_parent_license(self, record):
+        return "✅" if getattr(record, 'is_parent_license_value', False) else "❌"
+
+    def render_is_child_license(self, record):
+        return "✅" if getattr(record, 'is_child_license_value', False) else "❌"
+    
     def render_assigned_count(self, record):
-        assigned = record.assignments.aggregate(total=Sum('volume'))['total'] or 0
+        assigned = getattr(record, 'assigned_count_value', 0) or 0
         volume_type = getattr(record.license_type, 'volume_type', None)
         volume_limit = record.volume_limit
 
-        if volume_type == "UNLIMITED":
+        if volume_type == "unlimited":
             max_str = "∞"
-        elif volume_type == "VOLUME":
+        elif volume_type == "volume":
             max_str = volume_limit if volume_limit is not None else "∞"
         else:
             max_str = 1
 
         url = reverse('plugins:license_management:licenseassignment_list') + f'?license={record.pk}'
         return format_html(f'<a href="{url}">{assigned}/{max_str}</a>')
-    
-
-
-    def render_volume_type(self, record):
-        return getattr(record.license_type, 'get_volume_type_display', lambda: '—')()
-
-    def render_is_parent_license(self, record):
-        return "✅" if record.is_parent_license else "❌"
-
-    def render_is_child_license(self, record):
-        return "✅" if record.is_child_license else "❌"
 
     
     class Meta(NetBoxTable.Meta):
@@ -142,8 +166,14 @@ class LicenseTable(NetBoxTable):
 
 class LicenseAssignmentTable(NetBoxTable):
     
+    license = tables.Column(
+        verbose_name="License", 
+        accessor="license", 
+        linkify=True
+    )
+
     license_key = tables.Column(
-        accessor="license.license_key",
+        accessor="license",
         verbose_name="License Key",
         linkify=True
     )
@@ -180,20 +210,37 @@ class LicenseAssignmentTable(NetBoxTable):
         verbose_name="Volume Relation",
         order_by="license__license_type__volume_relation"
     )
-    assigned_on = tables.Column(verbose_name="Assigned On")
+    assigned_to = tables.Column(verbose_name="Assigned On")
     description = tables.Column(verbose_name="Description")
+
+    def render_license(self, record):
+        license = record.license
+        if license and license.license_type:
+            return f"{license.license_type.name} – {license.license_key}"
+        return str(license) if license else "—"
+
+    def render_license_key(self, record):
+        license = record.license
+        if not license:
+            return "—"
+        
+        if license.serial_number:
+            return format_html(
+                "{}<br><small class='text-muted'>{}</small>",
+                license.license_key,
+                license.serial_number
+            )
+        return license.license_key
 
     class Meta(NetBoxTable.Meta):
         model = LicenseAssignment
         fields = (
-            "license_key", "manufacturer",
+            "license", "license_key", "license_type", "manufacturer",
             "device", "device_manufacturer",
             "virtual_machine", "volume", "volume_relation",
             "assigned_on", "description"
         )
         default_columns = (
-            "license_key", "license_type",
-            "device", "virtual_machine",
-            "volume",
+            "license", "device", "virtual_machine", "volume",
         )
         

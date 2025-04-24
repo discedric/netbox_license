@@ -73,14 +73,20 @@ class LicenseType(NetBoxModel):
     clone_fields = ['manufacturer', 'volume_type', 'license_model', 'purchase_model']
 
     def clean(self):
-        if self.license_model == "EXPANSION":
+        if self.license_model == LicenseModelChoices.EXPANSION:
             if not self.base_license:
-                raise ValidationError({"base_license": "An Expansion license type must reference a Base license."})
-            if self.base_license.license_model != "base":
-                raise ValidationError({"base_license": "Base License must be of type 'base'."})
-        elif self.license_model == "base":
+                raise ValidationError({
+                    "base_license": "An Expansion license type must reference a Base license."
+                })
+            if self.base_license.license_model != LicenseModelChoices.BASE:
+                raise ValidationError({
+                    "base_license": "Base License must be of type 'base'."
+                })
+        elif self.license_model == LicenseModelChoices.BASE:
             if self.base_license is not None:
-                raise ValidationError({"base_license": "Only Expansion licenses can reference a base license."})
+                raise ValidationError({
+                    "base_license": "Only Expansion licenses can reference a base license."
+                })
 
     def __str__(self):
         return self.name
@@ -133,15 +139,15 @@ class License(NetBoxModel):
 
         vt = self.license_type.volume_type if self.license_type else None
         
-        if vt == "SINGLE":
+        if vt == "single":
             if self.volume_limit and self.volume_limit != 1:
                 raise ValidationError({"volume_limit": "Single licenses must have a volume limit of exactly 1."})
             self.volume_limit = 1
 
-        elif vt == "UNLIMITED":
+        elif vt == "unlimited":
             self.volume_limit = None
 
-        elif vt == "VOLUME":
+        elif vt == "volume":
             if not self.volume_limit or self.volume_limit < 2:
                 raise ValidationError("Volume licenses require a volume limit of at least 2.")
 
@@ -155,7 +161,7 @@ class License(NetBoxModel):
 
     def usage_display(self):
         vt = self.license_type.volume_type if self.license_type else ""
-        if vt == "UNLIMITED":
+        if vt == "unlimited":
             return f"{self.current_usage()}/∞"
         return f"{self.current_usage()}/{self.volume_limit}"
 
@@ -285,14 +291,14 @@ class LicenseAssignment(NetBoxModel):
 
             self.manufacturer = self.license.manufacturer
 
-            if volume_type == "SINGLE":
+            if volume_type == "single":
                 if self.volume != 1:
                     raise ValidationError("Single licenses can only have a volume of 1.")
                 existing_assignments = self.license.assignments.exclude(pk=self.pk).count()
                 if existing_assignments >= 1:
                     raise ValidationError("Single licenses can only be assigned to one entity (Device or VM).")
 
-            elif volume_type == "VOLUME":
+            elif volume_type == "volume":
                 if self.volume < 1:
                     raise ValidationError("Volume quantity must be at least 1.")
                 total_assigned_volume = (
