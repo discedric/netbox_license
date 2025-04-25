@@ -73,6 +73,8 @@ class LicenseType(NetBoxModel):
     clone_fields = ['manufacturer', 'volume_type', 'license_model', 'purchase_model']
 
     def clean(self):
+        super().clean()
+
         if self.license_model == LicenseModelChoices.EXPANSION:
             if not self.base_license:
                 raise ValidationError({
@@ -82,11 +84,27 @@ class LicenseType(NetBoxModel):
                 raise ValidationError({
                     "base_license": "Base License must be of type 'base'."
                 })
+
         elif self.license_model == LicenseModelChoices.BASE:
             if self.base_license is not None:
                 raise ValidationError({
                     "base_license": "Only Expansion licenses can reference a base license."
                 })
+
+        if self.pk:
+            original = LicenseType.objects.get(pk=self.pk)
+            has_licenses = self.licenses.exists()
+
+            if has_licenses:
+                if original.license_model != self.license_model:
+                    raise ValidationError({
+                        "license_model": "Cannot change license model: there are existing licenses linked to this license type."
+                    })
+
+                if original.volume_type != self.volume_type:
+                    raise ValidationError({
+                        "volume_type": "Cannot change volume type: there are existing licenses linked to this license type."
+                    })
 
     def __str__(self):
         return self.name
@@ -137,8 +155,15 @@ class License(NetBoxModel):
         if self.license_type:
             self.manufacturer = self.license_type.manufacturer
 
+        if self.pk:
+            original = License.objects.get(pk=self.pk)
+            if original.license_type != self.license_type:
+                raise ValidationError({
+                    "license_type": "Changing the license type of an existing license is not allowed."
+                })
+
         vt = self.license_type.volume_type if self.license_type else None
-        
+
         if vt == "single":
             if self.volume_limit and self.volume_limit != 1:
                 raise ValidationError({"volume_limit": "Single licenses must have a volume limit of exactly 1."})
@@ -183,24 +208,37 @@ class License(NetBoxModel):
         verbose_name = "License"
         verbose_name_plural = "Licenses"
 
+    @property
     def get_expiry_progress(self):
-        if not self.expiry_date or not self.purchase_date:
-            return None
+        today = date.today()
 
-        days_left = self.expiry_remaining.days
-        if days_left < 0:
-            color = "danger"
-        elif days_left < 90:
-            color = "warning"
-        else:
-            color = "success"
+        if self.expiry_date:
+            days_left = (self.expiry_date - today).days
 
-        return {
-            "percent": self.expiry_progress,
-            "days_left": days_left,
-            "color": color,
-            "expired": days_left < 0,
-        }
+            if self.purchase_date:
+                total_days = (self.expiry_date - self.purchase_date).days
+                if total_days > 0:
+                    percent = int(100 * (1 - (days_left / total_days)))
+                else:
+                    percent = 100
+            else:
+                percent = 100 if days_left < 0 else 100 - min(days_left, 100)
+
+            if days_left < 0:
+                color = "danger"
+            elif days_left < 90:
+                color = "warning"
+            else:
+                color = "success"
+
+            return {
+                "percent": max(0, min(percent, 100)),
+                "days_left": days_left,
+                "color": color,
+                "expired": days_left < 0,
+            }
+
+        return None
 
     @property
     def expiry_elapsed(self):

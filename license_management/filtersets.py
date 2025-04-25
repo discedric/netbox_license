@@ -11,7 +11,7 @@ from .choices import (
     LicenseAssignmentStatusChoices
 )
 from netbox.filtersets import NetBoxModelFilterSet
-from dcim.models import Manufacturer, Device
+from dcim.models import Manufacturer, Device, DeviceType
 from virtualization.models import VirtualMachine, Cluster
 
 # ---------- LicenseType ----------
@@ -225,6 +225,12 @@ class LicenseAssignmentFilterSet(NetBoxModelFilterSet):
         queryset=Device.objects.all(),
         label="Device (ID)"
     )
+    device_type_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='device__device_type',
+        queryset=DeviceType.objects.all(),
+        label="Device Type"
+    )
+
     virtual_machine_id = django_filters.ModelChoiceFilter(
         queryset=VirtualMachine.objects.all(),
         label="Virtual Machine"

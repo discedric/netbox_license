@@ -93,7 +93,7 @@ class LicenseTypeForm(NetBoxModelForm):
             getattr(self.instance, "license_model", None)
         )
 
-        if license_model_value == "EXPANSION":
+        if license_model_value == "expansion":
             self.fields["base_license"].required = True
         else:
             self.fields["base_license"].queryset = LicenseType.objects.none()
@@ -107,9 +107,9 @@ class LicenseTypeForm(NetBoxModelForm):
         license_model = cleaned_data.get("license_model")
         base_license = cleaned_data.get("base_license")
 
-        if license_model == "EXPANSION" and not base_license:
+        if license_model == "expansion" and not base_license:
             self.add_error("base_license", "You must select a base license when the license model is set to 'Expansion Pack'.")
-        elif license_model == "BASE" and base_license:
+        elif license_model == "base" and base_license:
             self.add_error("base_license", "Base licenses cannot reference another base license.")
 
         return cleaned_data
@@ -141,7 +141,7 @@ class LicenseForm(NetBoxModelForm):
         label="Parent License",
         help_text="Select a parent license if applicable.",
         selector=True,
-        query_params={'manufacturer_id': '$manufacturer'}
+        query_params={'license_type_id': '$license_type'}
     )
 
     license_key = forms.CharField(required=True, label="License Key")
@@ -162,21 +162,9 @@ class LicenseForm(NetBoxModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        license_type = getattr(self.instance, "license_type", None)
-        if license_type:
-            volume_type_display_value = license_type.get_volume_type_display()
-        else:
-            volume_type_display_value = ""
-
-        self.fields["volume_type_display"] = forms.CharField(
-            required=False,
-            label="Volume Type",
-            disabled=True,
-            initial=volume_type_display_value,
-        )
-
+        
         self.order_fields([
-            "manufacturer", "license_type", "volume_type_display", "license_key", "serial_number",
+            "manufacturer", "license_type", "license_key", "serial_number",
             "description", "volume_limit", "parent_license", "purchase_date",
             "expiry_date", "comment"
         ])
@@ -237,6 +225,7 @@ class LicenseAssignmentForm(NetBoxModelForm):
         ]
 
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop("request", None)
         super().__init__(*args, **kwargs)
 
         manufacturer = (
@@ -249,16 +238,12 @@ class LicenseAssignmentForm(NetBoxModelForm):
         vm_id = self.data.get("virtual_machine") or self.initial.get("virtual_machine")
 
         if manufacturer:
-            licenses = License.objects.filter(manufacturer=manufacturer)
-            self.fields["license"].queryset = licenses
+            self.fields["license"].queryset = License.objects.filter(manufacturer=manufacturer)
 
             def label_from_instance(obj):
                 serial = obj.serial_number or ""
-                return format_html(
-                    '{}<br><small class="text-muted">{}</small>',
-                    obj.license_key,
-                    serial
-                )
+                return format_html('{}<br><small class="text-muted">{}</small>', obj.license_key, serial)
+
             self.fields["license"].label_from_instance = label_from_instance
 
         if not self.instance.pk:
@@ -266,16 +251,15 @@ class LicenseAssignmentForm(NetBoxModelForm):
                 self.fields["license"].initial = license_id
                 if not self.fields["license"].queryset.exists():
                     self.fields["license"].queryset = License.objects.filter(pk=license_id)
-
             if device_id:
                 self.fields["device"].initial = device_id
-
             if vm_id:
                 self.fields["virtual_machine"].initial = vm_id
 
         if self.instance.pk:
             for field in ["manufacturer", "license", "device", "virtual_machine"]:
                 self.fields[field].disabled = True
+
 
     def clean(self):
         cleaned_data = super().clean()

@@ -87,7 +87,6 @@ class LicenseEditView(generic.ObjectEditView):
     form = LicenseForm
     default_return_url = 'plugins:license_management:license_list'
 
-
 @register_model_view(License, 'delete')
 class LicenseDeleteView(generic.ObjectDeleteView):
     """View for deleting a license"""

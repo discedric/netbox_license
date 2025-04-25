@@ -179,6 +179,11 @@ class LicenseAssignmentTable(NetBoxTable):
         verbose_name="Device",
         linkify=True
     )
+    device_type = tables.Column(
+        accessor="device.device_type",
+        verbose_name="Device Type",
+        linkify=True
+    )
     device_manufacturer = tables.Column(
         accessor="device.device_type.manufacturer",
         verbose_name="Device Manufacturer",
@@ -203,11 +208,11 @@ class LicenseAssignmentTable(NetBoxTable):
         model = LicenseAssignment
         fields = (
             "license_key", "license_type", "manufacturer",
-            "device", "device_manufacturer",
+            "device", "device_type", "device_manufacturer",
             "virtual_machine", "volume", "volume_relation",
             "assigned_to", "description"
         )
         default_columns = (
             "license", "device", "virtual_machine", "volume",
         )
-        
+            

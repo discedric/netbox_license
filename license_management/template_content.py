@@ -1,6 +1,5 @@
 from django.apps import apps
 from netbox.plugins import PluginTemplateExtension
-#from .models import LicenseAssignment, License, LicenseType
 
 LICENSE_EXPIRY_PROGRESSBAR_TABLE = """
 {% with record.get_expiry_progress as wp %}
