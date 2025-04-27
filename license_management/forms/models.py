@@ -162,12 +162,19 @@ class LicenseForm(NetBoxModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        
+        if self.initial.get('license_type'):
+            self.fields['license_type'].disabled = True
+        if self.initial.get('manufacturer'):
+            self.fields['manufacturer'].disabled = True
+        if self.initial.get('parent_license'):
+            self.fields['parent_license'].disabled = True
+
         self.order_fields([
             "manufacturer", "license_type", "license_key", "serial_number",
             "description", "volume_limit", "parent_license", "purchase_date",
             "expiry_date", "comment"
         ])
+
 
 
 
@@ -227,6 +234,17 @@ class LicenseAssignmentForm(NetBoxModelForm):
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop("request", None)
         super().__init__(*args, **kwargs)
+        
+        if self.initial.get('manufacturer'):
+            self.fields['manufacturer'].disabled = True
+        if self.initial.get('license'):
+            self.fields['license'].disabled = True
+        if self.initial.get('device'):
+            self.fields['device'].disabled = True
+        if self.initial.get('virtual_machine'):
+            self.fields['virtual_machine'].disabled = True
+
+
 
         manufacturer = (
             self.data.get("manufacturer")

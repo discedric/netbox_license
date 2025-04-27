@@ -87,6 +87,18 @@ class LicenseEditView(generic.ObjectEditView):
     form = LicenseForm
     default_return_url = 'plugins:license_management:license_list'
 
+    def get_initial(self):
+        initial = super().get_initial()
+        if 'license_type' in self.request.GET:
+            initial['license_type'] = self.request.GET.get('license_type')
+        if 'manufacturer' in self.request.GET:
+            initial['manufacturer'] = self.request.GET.get('manufacturer')
+        if 'parent_license' in self.request.GET:
+            initial['parent_license'] = self.request.GET.get('parent_license')
+        return initial
+
+
+
 @register_model_view(License, 'delete')
 class LicenseDeleteView(generic.ObjectDeleteView):
     """View for deleting a license"""
