@@ -110,7 +110,7 @@ class LicenseTable(NetBoxTable):
 
     expiry_bar = TemplateColumn(
         template_code=LICENSE_EXPIRY_PROGRESSBAR_TABLE,
-        verbose_name="Expirty status",
+        verbose_name="Expiry Status",
         order_by="expiry_date",
     )
 

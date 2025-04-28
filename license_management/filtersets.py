@@ -94,11 +94,6 @@ class LicenseFilterSet(NetBoxModelFilterSet):
         label="Volume Type"
     )
 
-    name = django_filters.CharFilter(
-        lookup_expr='icontains',
-        label="Name"
-    )
-
     license_key = django_filters.CharFilter(
         lookup_expr='icontains',
         label="License Key"
@@ -161,7 +156,7 @@ class LicenseFilterSet(NetBoxModelFilterSet):
     class Meta:
         model = License
         fields = [
-            "license_key", "serial_number", "name", "manufacturer", "license_type_id",
+            "license_key", "serial_number", "manufacturer", "license_type_id",
             "volume_type", "license_model", "parent_license", "parent_license_type",
             "child_license", "is_parent_license", "is_child_license",
             "purchase_date", "expiry_date",
@@ -176,9 +171,10 @@ class LicenseFilterSet(NetBoxModelFilterSet):
         if not value.strip():
             return queryset
         return queryset.filter(
-            Q(name__icontains=value) |
             Q(license_key__icontains=value) |
-            Q(serial_number__icontains=value)
+            Q(serial_number__icontains=value) |
+            Q(description__icontains=value) |
+            Q(manufacturer__name__icontains=value)
         ).distinct()
 
 # ---------- Assignments ----------
@@ -262,9 +258,11 @@ class LicenseAssignmentFilterSet(NetBoxModelFilterSet):
 
     def search(self, queryset, name, value):
         return queryset.filter(
-            Q(license__name__icontains=value)
-            | Q(license__license_key__icontains=value)
+            Q(license__license_key__icontains=value)
+            | Q(license__serial_number__icontains=value)
+            | Q(license__description__icontains=value)
             | Q(license__manufacturer__name__icontains=value)
             | Q(device__name__icontains=value)
             | Q(virtual_machine__name__icontains=value)
         ).distinct()
+

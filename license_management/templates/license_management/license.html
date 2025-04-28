@@ -141,7 +141,7 @@
         <thead>
           <tr>
             <th>License Key</th>
-            <th>Manufacturer</th>
+            <th>License Type</th>
             <th>Volume</th>
             <th>Expiry Date</th>
           </tr>
@@ -150,7 +150,7 @@
           {% for sub in object.sub_licenses.all %}
           <tr>
             <td>{{ sub|linkify }}</td>
-            <td>{{ sub.manufacturer|linkify|placeholder }}</td>
+            <td>{{ sub.LicenseType|linkify|placeholder }}</td>
             <td>
               {% if sub.volume_type == 'UNLIMITED' %}
                 Unlimited

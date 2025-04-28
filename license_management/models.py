@@ -219,11 +219,14 @@ class License(NetBoxModel):
                 total_days = (self.expiry_date - self.purchase_date).days
                 if total_days > 0:
                     percent = int(100 * (1 - (days_left / total_days)))
+                    if percent < 10 and days_left > 0:
+                        percent = 10
                 else:
                     percent = 100
             else:
-                percent = 100 if days_left < 0 else 100 - min(days_left, 100)
+                percent = 100 if days_left < 0 else 10
 
+            # Set color
             if days_left < 0:
                 color = "danger"
             elif days_left < 90:
@@ -242,37 +245,34 @@ class License(NetBoxModel):
 
     @property
     def expiry_elapsed(self):
-        """
-        Return the elapsed percentage (used in progress bars).
-        """
         return date.today() - self.purchase_date if self.purchase_date else None
-
 
     @property
     def expiry_remaining(self):
-        """
-        Return a timedelta of days remaining before expiry.
-        If expiry date is unknown, return timedelta(0).
-        """
         if self.expiry_date:
             return self.expiry_date - date.today()
         return None
 
     @property
     def expiry_total(self):
-        """
-        Return the total duration of the license in days.
-        If purchase date is unknown, return timedelta(0).
-        """
         if self.purchase_date and self.expiry_date:
             return self.expiry_date - self.purchase_date
         return None
 
     @property
     def expiry_progress(self):
-        if not self.expiry_date or not self.purchase_date:
+        if not self.expiry_date:
             return None
-        return int(100* (self.expiry_elapsed / self.expiry_total))
+        if not self.purchase_date:
+            days_left = (self.expiry_date - date.today()).days
+            return 10 if days_left > 0 else 100
+        try:
+            percent = int(100 * (self.expiry_elapsed / self.expiry_total))
+            if percent < 10 and self.expiry_remaining.days > 0:
+                percent = 10
+            return max(0, min(percent, 100))
+        except ZeroDivisionError:
+            return 100
     
     class Meta:
         verbose_name = "Licenses"
