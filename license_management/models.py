@@ -152,8 +152,12 @@ class License(NetBoxModel):
     tags = TaggableManager(related_name="lm_license_tags")
 
     def clean(self):
-        if self.license_type:
-            self.manufacturer = self.license_type.manufacturer
+        if self.license_type_id:
+            try:
+                license_type = self.license_type
+                self.manufacturer = license_type.manufacturer
+            except LicenseType.DoesNotExist:
+                pass
 
         if self.pk:
             original = License.objects.get(pk=self.pk)
@@ -162,7 +166,7 @@ class License(NetBoxModel):
                     "license_type": "Changing the license type of an existing license is not allowed."
                 })
 
-        vt = self.license_type.volume_type if self.license_type else None
+        vt = self.license_type.volume_type if self.license_type_id and self.license_type else None
 
         if vt == "single":
             if self.volume_limit and self.volume_limit != 1:

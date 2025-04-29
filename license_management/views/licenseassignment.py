@@ -62,17 +62,6 @@ class LicenseAssignmentEditView(generic.ObjectEditView):
     form = LicenseAssignmentForm
     default_return_url = 'plugins:license_management:licenseassignment_list'
 
-    def get_initial(self):
-        initial = super().get_initial()
-        if 'manufacturer' in self.request.GET:
-            initial['manufacturer'] = self.request.GET.get('manufacturer')
-        if 'device' in self.request.GET:
-            initial['device'] = self.request.GET.get('device')
-        if 'virtual_machine' in self.request.GET:
-            initial['virtual_machine'] = self.request.GET.get('virtual_machine')
-        if 'license' in self.request.GET:
-            initial['license'] = self.request.GET.get('license')
-        return initial
 
 
 @register_model_view(LicenseAssignment, 'delete')

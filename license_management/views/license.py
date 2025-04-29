@@ -1,8 +1,8 @@
 from netbox.views import generic
 from utilities.views import register_model_view
-from django.db.models import Sum, Case, When, BooleanField, Value
+from django.db.models import OuterRef, Subquery, Sum, Case, When, BooleanField, Value
 from django.db.models.functions import Coalesce
-from ..models import License
+from ..models import License, LicenseAssignment
 from .. import filtersets, tables
 from ..forms.filtersets import LicenseFilterForm
 from ..forms.bulk_edit import LicenseBulkEditForm
@@ -63,6 +63,12 @@ class LicenseListView(generic.ObjectListView):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
 
+        assignments_sum = LicenseAssignment.objects.filter(
+            license=OuterRef('pk')
+        ).values('license').annotate(
+            total=Sum('volume')
+        ).values('total')
+
         return qs.annotate(
             is_parent_license_value=Case(
                 When(sub_licenses__isnull=False, then=Value(True)),
@@ -74,7 +80,7 @@ class LicenseListView(generic.ObjectListView):
                 default=Value(False),
                 output_field=BooleanField()
             ),
-            assigned_count_value = Coalesce(Sum('assignments__volume'), 0)
+            assigned_count_value=Coalesce(Subquery(assignments_sum), 0)
         )
 
 
@@ -87,15 +93,6 @@ class LicenseEditView(generic.ObjectEditView):
     form = LicenseForm
     default_return_url = 'plugins:license_management:license_list'
 
-    def get_initial(self):
-        initial = super().get_initial()
-        if 'license_type' in self.request.GET:
-            initial['license_type'] = self.request.GET.get('license_type')
-        if 'manufacturer' in self.request.GET:
-            initial['manufacturer'] = self.request.GET.get('manufacturer')
-        if 'parent_license' in self.request.GET:
-            initial['parent_license'] = self.request.GET.get('parent_license')
-        return initial
 
 
 

@@ -162,13 +162,6 @@ class LicenseForm(NetBoxModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        if self.initial.get('license_type'):
-            self.fields['license_type'].disabled = True
-        if self.initial.get('manufacturer'):
-            self.fields['manufacturer'].disabled = True
-        if self.initial.get('parent_license'):
-            self.fields['parent_license'].disabled = True
-
         self.order_fields([
             "manufacturer", "license_type", "license_key", "serial_number",
             "description", "volume_limit", "parent_license", "purchase_date",
@@ -186,7 +179,7 @@ class LicenseAssignmentForm(NetBoxModelForm):
         required=True,
         label="License Manufacturer",
         selector=True,
-        quick_add=True
+        quick_add=True,
     )
 
     license = DynamicModelChoiceField(
@@ -194,21 +187,21 @@ class LicenseAssignmentForm(NetBoxModelForm):
         required=True,
         label="License",
         selector=True,
-        query_params={'manufacturer_id': '$manufacturer'}
+        query_params={"manufacturer_id": "$manufacturer"},
     )
 
     device = DynamicModelChoiceField(
         queryset=Device.objects.all(),
         required=False,
         label="Device",
-        selector=True
+        selector=True,
     )
 
     virtual_machine = DynamicModelChoiceField(
         queryset=VirtualMachine.objects.all(),
         required=False,
         label="Virtual Machine",
-        selector=True
+        selector=True,
     )
 
     comments = CommentField()
@@ -220,31 +213,25 @@ class LicenseAssignmentForm(NetBoxModelForm):
                 FieldSet("device", name="Device Assignment"),
                 FieldSet("virtual_machine", name="Virtual Machine Assignment"),
             ),
-            name="Assignment Type"
+            name="Assignment Type",
         ),
     )
 
     class Meta:
         model = LicenseAssignment
         fields = [
-            "manufacturer", "license", "device", "virtual_machine",
-            "volume", "description", "comments"
+            "manufacturer",
+            "license",
+            "device",
+            "virtual_machine",
+            "volume",
+            "description",
+            "comments",
         ]
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop("request", None)
         super().__init__(*args, **kwargs)
-        
-        if self.initial.get('manufacturer'):
-            self.fields['manufacturer'].disabled = True
-        if self.initial.get('license'):
-            self.fields['license'].disabled = True
-        if self.initial.get('device'):
-            self.fields['device'].disabled = True
-        if self.initial.get('virtual_machine'):
-            self.fields['virtual_machine'].disabled = True
-
-
 
         manufacturer = (
             self.data.get("manufacturer")
@@ -258,11 +245,11 @@ class LicenseAssignmentForm(NetBoxModelForm):
         if manufacturer:
             self.fields["license"].queryset = License.objects.filter(manufacturer=manufacturer)
 
-            def label_from_instance(obj):
-                serial = obj.serial_number or ""
-                return format_html('{}<br><small class="text-muted">{}</small>', obj.license_key, serial)
-
-            self.fields["license"].label_from_instance = label_from_instance
+            self.fields["license"].label_from_instance = lambda obj: format_html(
+                '{}<br><small class="text-muted">{}</small>',
+                obj.license_key,
+                obj.serial_number or "",
+            )
 
         if not self.instance.pk:
             if license_id:
@@ -273,17 +260,14 @@ class LicenseAssignmentForm(NetBoxModelForm):
                 self.fields["device"].initial = device_id
             if vm_id:
                 self.fields["virtual_machine"].initial = vm_id
-
-        if self.instance.pk:
+        else:
             for field in ["manufacturer", "license", "device", "virtual_machine"]:
                 self.fields[field].disabled = True
 
-
     def clean(self):
         cleaned_data = super().clean()
-
         if not cleaned_data:
-            return cleaned_data  
+            return cleaned_data
 
         device = cleaned_data.get("device")
         virtual_machine = cleaned_data.get("virtual_machine")
