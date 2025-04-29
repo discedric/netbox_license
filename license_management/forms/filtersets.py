@@ -92,7 +92,7 @@ class LicenseFilterForm(NetBoxModelFilterSetForm):
         FieldSet('manufacturer_id', 'license_key', 'serial_number', 'name', name='License Info'),
         FieldSet('license_model', 'volume_type', 'license_type_id', name='License Type Info'),
         FieldSet('is_parent_license', 'is_child_license', 'parent_license', 'child_license', 'parent_license_type', name='License Relationship'),
-        FieldSet('assignments__device_id', 'assignments__virtual_machine_id', 'assignments__virtual_machine__cluster_id', name='Assignment Info'),
+        FieldSet('assignments__device_id', 'assignments__virtual_machine_id', 'assignments__virtual_machine__cluster_id', 'is_assigned', name='Assignment Info'),
         FieldSet('purchase_date', 'expiry_date', name='Dates'),
     )
 
@@ -169,6 +169,12 @@ class LicenseFilterForm(NetBoxModelFilterSetForm):
     is_child_license = forms.NullBooleanField(
         required=False,
         label="Is Child License",
+        widget=forms.Select(choices=[('', '---------'), (True, 'Yes'), (False, 'No')])
+    )
+
+    is_assigned = forms.NullBooleanField(
+        required=False,
+        label="Is Assigned",
         widget=forms.Select(choices=[('', '---------'), (True, 'Yes'), (False, 'No')])
     )
 

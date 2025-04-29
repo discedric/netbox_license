@@ -23,6 +23,10 @@ class LicenseTypeImportForm(NetBoxModelImportForm):
         required=True,
         help_text='Manufacturer of the license type.'
     )
+    slug = forms.SlugField(
+        required=True,
+        help_text="Unique slug for the license type. Must be URL-safe (letters, numbers, hyphens)."
+    )
     license_model = CSVChoiceField(
         choices=LicenseModelChoices,
         required=True,
@@ -49,6 +53,7 @@ class LicenseTypeImportForm(NetBoxModelImportForm):
         model = LicenseType
         fields = [
             "name",
+            "slug",
             "manufacturer",
             "product_code",
             "ean_code",
@@ -136,6 +141,13 @@ class LicenseTypeImportForm(NetBoxModelImportForm):
 # ---------- License ----------
 
 class LicenseImportForm(NetBoxModelImportForm):
+    manufacturer = CSVModelChoiceField(
+        queryset=Manufacturer.objects.all(),
+        to_field_name='name',
+        required=True,
+        help_text='Manufacturer of the license.'
+    )
+
     license_type = CSVModelChoiceField(
         queryset=LicenseType.objects.all(),
         to_field_name='name',
@@ -183,7 +195,7 @@ class LicenseImportForm(NetBoxModelImportForm):
     class Meta:
         model = License
         fields = [
-            "license_type", "license_key", "serial_number", "description",
+            "manufacturer", "license_type", "license_key", "serial_number", "description",
             "purchase_date", "expiry_date", "volume_limit", "parent_license"
         ]
 

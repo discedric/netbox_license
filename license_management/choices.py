@@ -45,13 +45,16 @@ class VolumeRelationChoices(ChoiceSet):
     CORES = 'cores'
     USERS = 'users'
     PRINTERS = 'printers'
+    SYSTEM = 'system'
 
     CHOICES = [
         (CPU, _('CPU')),
         (CORES, _('Cores')),
         (USERS, _('Users')),
         (PRINTERS, _('Printers')),
+        (SYSTEM, _('System')),  
     ]
+
 
 # ---------- License ----------
 

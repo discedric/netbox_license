@@ -150,12 +150,12 @@
           {% for sub in object.sub_licenses.all %}
           <tr>
             <td>{{ sub|linkify }}</td>
-            <td>{{ sub.LicenseType|linkify|placeholder }}</td>
+            <td>{{ sub.license_type|linkify|placeholder }}</td>
             <td>
-              {% if sub.volume_type == 'UNLIMITED' %}
+              {% if sub.license_type.volume_type == 'unlimited' %}
                 Unlimited
               {% else %}
-                {{ sub.volume_limit }}
+                {{ sub.volume_limit|placeholder }}
               {% endif %}
             </td>
             <td>{{ sub.expiry_date|date:"Y-m-d"|placeholder }}</td>

@@ -141,7 +141,9 @@ class LicenseForm(NetBoxModelForm):
         label="Parent License",
         help_text="Select a parent license if applicable.",
         selector=True,
-        query_params={'license_type_id': '$license_type'}
+        query_params={'license_type_id': '$license_type',
+                      'license_type__license_model':LicenseModelChoices.BASE,
+                      }
     )
 
     license_key = forms.CharField(required=True, label="License Key")

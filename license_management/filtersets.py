@@ -131,6 +131,11 @@ class LicenseFilterSet(NetBoxModelFilterSet):
         exclude=True,
         label='Is Child License'
     )
+
+    is_assigned = django_filters.BooleanFilter(
+        method='filter_is_assigned',
+        label='Is Assigned',
+    )
     
     assignments__device_id = django_filters.ModelMultipleChoiceFilter(
         field_name='assignments__device',
@@ -159,13 +164,20 @@ class LicenseFilterSet(NetBoxModelFilterSet):
             "license_key", "serial_number", "manufacturer", "license_type_id",
             "volume_type", "license_model", "parent_license", "parent_license_type",
             "child_license", "is_parent_license", "is_child_license",
-            "purchase_date", "expiry_date",
+            "purchase_date", "expiry_date", "is_assigned",
         ]
 
     def filter_is_parent_license(self, queryset, name, value):
         if value:
             return queryset.filter(sub_licenses__isnull=False).distinct()
         return queryset.filter(sub_licenses__isnull=True)
+    
+    def filter_is_assigned(self, queryset, name, value):
+        if value is True:
+            return queryset.filter(assignments__isnull=False).distinct()
+        if value is False:
+            return queryset.filter(assignments__isnull=True)
+        return queryset
 
     def search(self, queryset, name, value):
         if not value.strip():
