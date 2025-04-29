@@ -60,7 +60,13 @@ class LicenseTable(NetBoxTable):
         order_by='license_type__license_model'
     )
     license_key = tables.Column(linkify=True)
-    product_key = tables.Column(verbose_name="Product Key")
+
+    product_key = tables.Column(
+        accessor="license_type.product_code",
+        order_by="license_type__product_code",
+        verbose_name="Product Key"
+    )
+
     serial_number = tables.Column(verbose_name="Serial Number")
     manufacturer = tables.Column(
         verbose_name="License Manufacturer",

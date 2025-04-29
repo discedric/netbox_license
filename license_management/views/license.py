@@ -81,7 +81,7 @@ class LicenseListView(generic.ObjectListView):
                 output_field=BooleanField()
             ),
             assigned_count_value=Coalesce(Subquery(assignments_sum), 0)
-        )
+        ).distinct()
 
 
 

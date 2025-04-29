@@ -186,7 +186,8 @@ class LicenseFilterSet(NetBoxModelFilterSet):
             Q(license_key__icontains=value) |
             Q(serial_number__icontains=value) |
             Q(description__icontains=value) |
-            Q(manufacturer__name__icontains=value)
+            Q(manufacturer__name__icontains=value)|
+            Q(license_type__name__icontains=value) 
         ).distinct()
 
 # ---------- Assignments ----------
