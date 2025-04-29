@@ -56,8 +56,8 @@ class LicenseTypeForm(NetBoxModelForm):
         help_text="Select a base license if this is an expansion pack.",
         selector=True,
         query_params={
-            'license_type__license_model': LicenseModelChoices.BASE,
-            "manufacturer_id": "$manufacturer",
+            "license_model": "base",
+            "manufacturer_id": "$manufacturer"
         }
     )
 
@@ -87,17 +87,21 @@ class LicenseTypeForm(NetBoxModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        license_model_value = (
-            self.data.get("license_model") or
-            self.initial.get("license_model") or
-            getattr(self.instance, "license_model", None)
+        self.fields['base_license'].queryset = LicenseType.objects.filter(
+            license_model=LicenseModelChoices.BASE
         )
 
-        if license_model_value == "expansion":
+        license_model_value = (
+            self.data.get("license_model")
+            or self.initial.get("license_model")
+            or getattr(self.instance, "license_model", None)
+        )
+
+        if license_model_value == LicenseModelChoices.EXPANSION:
             self.fields["base_license"].required = True
         else:
-            self.fields["base_license"].queryset = LicenseType.objects.none()
             self.fields["base_license"].required = False
+
 
     def clean(self):
         cleaned_data = super().clean()
@@ -136,15 +140,14 @@ class LicenseForm(NetBoxModelForm):
     )
 
     parent_license = DynamicModelChoiceField(
-        queryset=License.objects.all(),
-        required=False,
-        label="Parent License",
-        help_text="Select a parent license if applicable.",
-        selector=True,
-        query_params={'license_type_id': '$license_type',
-                      'license_type__license_model':LicenseModelChoices.BASE,
-                      }
-    )
+    queryset=License.objects.none(),
+    required=False,
+    label="Parent License",
+    help_text="Select a parent license if applicable.",
+    selector=True,
+    query_params={},
+    disabled_indicator=None,
+)
 
     license_key = forms.CharField(required=True, label="License Key")
 
@@ -164,13 +167,47 @@ class LicenseForm(NetBoxModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.order_fields([
-            "manufacturer", "license_type", "license_key", "serial_number",
-            "description", "volume_limit", "parent_license", "purchase_date",
-            "expiry_date", "comment"
-        ])
+        license_type_id = (
+            self.initial.get("license_type")
+            or self.data.get("license_type")
+            or getattr(self.instance, "license_type_id", None)
+        )
+
+        license_type = None
+        if license_type_id:
+            try:
+                license_type = LicenseType.objects.get(pk=license_type_id)
+            except LicenseType.DoesNotExist:
+                pass
+
+        if license_type and license_type.license_model == LicenseModelChoices.EXPANSION:
+            base_type = license_type.base_license
+            if base_type:
+                self.fields["parent_license"].queryset = License.objects.filter(
+                    license_type=base_type
+                )
 
 
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if not cleaned_data:
+            return cleaned_data
+
+        license_type = cleaned_data.get("license_type")
+        parent_license = cleaned_data.get("parent_license")
+
+        if license_type:
+            if license_type.license_model == LicenseModelChoices.EXPANSION:
+                if not parent_license:
+                    self.add_error("parent_license", "An expansion license must be linked to a parent base license.")
+                elif parent_license.license_type.license_model != LicenseModelChoices.BASE:
+                    self.add_error("parent_license", "The selected parent license must be of a base license type.")
+            elif license_type.license_model == LicenseModelChoices.BASE:
+                if parent_license:
+                    self.add_error("parent_license", "Base licenses cannot have a parent license.")
+
+        return cleaned_data
 
 
 # ---------- Assignments ----------

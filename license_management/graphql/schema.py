@@ -21,5 +21,5 @@ class LicenseQuery:
 class LicenseAssignmentQuery:
     @strawberry.field
     def License_assignment(self, info, id: int) -> LicenseAssignmentType:
-        return FirmwareAssignment.objects.get(pk=id)
+        return LicenseAssignment.objects.get(pk=id)
     license_assignment_list: list[LicenseAssignmentType] = strawberry_django.field()
