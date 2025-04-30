@@ -12,7 +12,9 @@ from ..choices import (
     LicenseModelChoices,
     VolumeRelationChoices,
     LicenseStatusChoices,
-    LicenseAssignmentStatusChoices
+    LicenseAssignmentStatusChoices,
+    AssignmentKindChoices
+
 )
 
 __all__ = (
@@ -252,7 +254,7 @@ class LicenseAssignmentForm(NetBoxModelForm):
                 FieldSet("device", name="Device Assignment"),
                 FieldSet("virtual_machine", name="Virtual Machine Assignment"),
             ),
-            name="Assignment Type",
+            name="Assignment Target",
         ),
     )
 
@@ -272,36 +274,48 @@ class LicenseAssignmentForm(NetBoxModelForm):
         self.request = kwargs.pop("request", None)
         super().__init__(*args, **kwargs)
 
+        instance = self.instance
+        data = self.data or self.initial
+
         manufacturer = (
-            self.data.get("manufacturer")
-            or self.initial.get("manufacturer")
-            or getattr(self.instance, "manufacturer", None)
+            data.get("manufacturer")
+            or getattr(instance, "manufacturer", None)
         )
-        license_id = self.data.get("license") or self.initial.get("license")
-        device_id = self.data.get("device") or self.initial.get("device")
-        vm_id = self.data.get("virtual_machine") or self.initial.get("virtual_machine")
+
+        license_id = data.get("license") or getattr(instance, "license_id", None)
+        device_id = data.get("device") or getattr(instance, "device_id", None)
+        vm_id = data.get("virtual_machine") or getattr(instance, "virtual_machine_id", None)
 
         if manufacturer:
             self.fields["license"].queryset = License.objects.filter(manufacturer=manufacturer)
-
             self.fields["license"].label_from_instance = lambda obj: format_html(
                 '{}<br><small class="text-muted">{}</small>',
                 obj.license_key,
                 obj.serial_number or "",
             )
 
-        if not self.instance.pk:
-            if license_id:
-                self.fields["license"].initial = license_id
-                if not self.fields["license"].queryset.exists():
-                    self.fields["license"].queryset = License.objects.filter(pk=license_id)
+        if instance.pk:
+            for field in ["manufacturer", "license", "device", "virtual_machine"]:
+                self.fields[field].disabled = True
+        else:
+            if license_id and not self.fields["license"].queryset.exists():
+                self.fields["license"].queryset = License.objects.filter(pk=license_id)
             if device_id:
                 self.fields["device"].initial = device_id
             if vm_id:
                 self.fields["virtual_machine"].initial = vm_id
-        else:
-            for field in ["manufacturer", "license", "device", "virtual_machine"]:
-                self.fields[field].disabled = True
+
+        kind_value = (
+            (data.get("device") and "device")
+            or (data.get("virtual_machine") and "virtual_machine")
+            or (instance.device_id and "device")
+            or (instance.virtual_machine_id and "virtual_machine")
+        )
+
+        if kind_value == "device":
+            self.fields["virtual_machine"].widget = forms.HiddenInput()
+        elif kind_value == "virtual_machine":
+            self.fields["device"].widget = forms.HiddenInput()
 
     def clean(self):
         cleaned_data = super().clean()
@@ -312,24 +326,19 @@ class LicenseAssignmentForm(NetBoxModelForm):
         virtual_machine = cleaned_data.get("virtual_machine")
 
         if not device and not virtual_machine:
-            raise forms.ValidationError(
-                "You must assign the license to either a Device or a Virtual Machine."
-            )
-
+            raise forms.ValidationError("You must assign the license to either a Device or a Virtual Machine.")
         if device and virtual_machine:
-            raise forms.ValidationError(
-                "You can only assign a license to either a Device or a Virtual Machine, not both."
-            )
+            raise forms.ValidationError("You can only assign a license to either a Device or a Virtual Machine, not both.")
 
         return cleaned_data
 
     def save(self, commit=True):
         assignment = super().save(commit=False)
 
-        if self.cleaned_data.get("virtual_machine"):
-            assignment.device = None
-        elif self.cleaned_data.get("device"):
+        if assignment.device:
             assignment.virtual_machine = None
+        elif assignment.virtual_machine:
+            assignment.device = None
 
         if commit:
             assignment.save()

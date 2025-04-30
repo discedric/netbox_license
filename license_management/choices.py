@@ -85,3 +85,12 @@ class LicenseAssignmentStatusChoices(ChoiceSet):
         (INACTIVE, _('Inactive'), 'gray'),
         (EXPIRED, _('Expired'), 'red'),
     ]
+
+class AssignmentKindChoices(ChoiceSet):
+    DEVICE = 'device'
+    VM = 'virtual_machine'
+
+    CHOICES = [
+        (DEVICE, 'Device'),
+        (VM, 'Virtual Machine'),
+    ]

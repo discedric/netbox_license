@@ -8,7 +8,8 @@ from .choices import (
     LicenseModelChoices,
     VolumeRelationChoices,
     LicenseStatusChoices,
-    LicenseAssignmentStatusChoices
+    LicenseAssignmentStatusChoices,
+    AssignmentKindChoices,
 )
 from netbox.filtersets import NetBoxModelFilterSet
 from dcim.models import Manufacturer, Device, DeviceType
@@ -221,6 +222,13 @@ class LicenseAssignmentFilterSet(NetBoxModelFilterSet):
         queryset=LicenseType.objects.all(),
         label="License Type (ID)"
     )
+
+    kind = django_filters.MultipleChoiceFilter(
+        method='filter_kind',
+        choices=AssignmentKindChoices,
+        label="Kind",
+    )
+
     device = django_filters.ModelChoiceFilter(
         queryset=Device.objects.all(), 
         label="Device"
@@ -279,7 +287,9 @@ class LicenseAssignmentFilterSet(NetBoxModelFilterSet):
             "device_manufacturer",
             "assigned_to",
             "volume",
+            "kind",
         ]
+   
 
     def search(self, queryset, name, value):
         return queryset.filter(
@@ -290,4 +300,12 @@ class LicenseAssignmentFilterSet(NetBoxModelFilterSet):
             | Q(device__name__icontains=value)
             | Q(virtual_machine__name__icontains=value)
         ).distinct()
+    
+    def filter_kind(self, queryset, name, value):
+        q = Q()
+        if AssignmentKindChoices.DEVICE in value:
+            q |= Q(device__isnull=False)
+        if AssignmentKindChoices.VM in value:
+            q |= Q(virtual_machine__isnull=False)
+        return queryset.filter(q)
 

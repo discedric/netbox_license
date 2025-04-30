@@ -12,7 +12,8 @@ from ..choices import (
     LicenseModelChoices,
     VolumeRelationChoices,
     LicenseStatusChoices,
-    LicenseAssignmentStatusChoices
+    LicenseAssignmentStatusChoices,
+    AssignmentKindChoices,
 )
 # ---------- LicenseType ----------
 
@@ -249,27 +250,24 @@ class LicenseAssignmentImportForm(NetBoxModelImportForm):
         help_text='The license key to assign.'
     )
 
-    device = CSVModelChoiceField(
-        queryset=Device.objects.all(),
-        to_field_name='name',
-        required=False,
-        label='Device',
-        help_text='Device to assign the license to (optional).'
+    model_kind = CSVChoiceField(
+        choices=AssignmentKindChoices,
+        required=True,
+        label='Kind',
+        help_text='Type of object to assign the license to (device or virtual_machine).'
     )
 
-    virtual_machine = CSVModelChoiceField(
-        queryset=VirtualMachine.objects.all(),
-        to_field_name='name',
-        required=False,
-        label='Virtual Machine',
-        help_text='Virtual machine to assign the license to (optional).'
+    model_name = forms.CharField(
+        required=True,
+        label='Object Name',
+        help_text='Name of the Device or Virtual Machine to assign.'
     )
 
     volume = forms.IntegerField(
-        required=False,
+        required=True,
         min_value=1,
         label='Volume',
-        help_text='Amount of license assigned (defaults to 1).'
+        help_text='Amount of license assigned.'
     )
 
     description = forms.CharField(
@@ -283,23 +281,41 @@ class LicenseAssignmentImportForm(NetBoxModelImportForm):
         fields = [
             "manufacturer",
             "license",
-            "device",
-            "virtual_machine",
+            "model_kind",
+            "model_name",
             "volume",
             "description"
         ]
 
     def clean(self):
         cleaned_data = super().clean()
-        device = cleaned_data.get("device")
-        virtual_machine = cleaned_data.get("virtual_machine")
-        license = cleaned_data.get("license")
-        volume = cleaned_data.get("volume") or 1
 
-        if not device and not virtual_machine:
-            raise forms.ValidationError("You must assign the license to either a Device or a Virtual Machine.")
-        if device and virtual_machine:
-            raise forms.ValidationError("A license can only be assigned to a Device or a Virtual Machine, not both.")
+        kind = cleaned_data.get("model_kind")
+        name = cleaned_data.get("model_name")
+        license = cleaned_data.get("license")
+        volume = cleaned_data.get("volume")
+
+        if not kind or not name:
+            raise forms.ValidationError("Both 'model_kind' and 'model_name' are required.")
+
+        if kind == AssignmentKindChoices.DEVICE:
+            try:
+                device = Device.objects.get(name=name)
+                cleaned_data["device"] = device
+                cleaned_data["virtual_machine"] = None
+            except Device.DoesNotExist:
+                raise forms.ValidationError(f"Device '{name}' not found.")
+
+        elif kind == AssignmentKindChoices.VM:
+            try:
+                vm = VirtualMachine.objects.get(name=name)
+                cleaned_data["virtual_machine"] = vm
+                cleaned_data["device"] = None
+            except VirtualMachine.DoesNotExist:
+                raise forms.ValidationError(f"Virtual Machine '{name}' not found.")
+
+        else:
+            raise forms.ValidationError(f"Invalid kind: {kind}. Must be 'device' or 'virtual_machine'.")
 
         if license:
             license_type = license.license_type
@@ -319,6 +335,6 @@ class LicenseAssignmentImportForm(NetBoxModelImportForm):
                         f"Assigned volume exceeds limit ({license.volume_limit}). Already assigned: {total_assigned}."
                     )
 
-        cleaned_data["volume"] = volume
         return cleaned_data
+
 

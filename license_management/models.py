@@ -9,6 +9,7 @@ from django.utils.translation import gettext_lazy as _
 from datetime import date
 from taggit.managers import TaggableManager
 from .choices import (
+    AssignmentKindChoices,
     VolumeTypeChoices,
     PurchaseModelChoices,
     LicenseModelChoices,
@@ -201,6 +202,11 @@ class License(NetBoxModel):
     @property
     def is_child_license(self):
         return self.parent_license is not None
+    
+    @property
+    def usage_kinds(self):
+        kinds = set(a.kind for a in self.assignments.all())
+        return [dict(AssignmentKindChoices).get(k) for k in kinds if k]
 
     def __str__(self):
         return f"{self.license_key}"
@@ -285,7 +291,6 @@ class License(NetBoxModel):
 # ---------- Assignments ----------
 
 class LicenseAssignment(NetBoxModel):
-    """Represents assignment of a license to a device OR a virtual machine."""
 
     license = models.ForeignKey(
         "License", on_delete=models.CASCADE, related_name="assignments"
@@ -318,6 +323,21 @@ class LicenseAssignment(NetBoxModel):
     )
 
     tags = TaggableManager(related_name="lm_assignment_tags")
+
+    @property
+    def kind(self):
+        if self.device_id:
+            return AssignmentKindChoices.DEVICE
+        elif self.virtual_machine_id:
+            return AssignmentKindChoices.VM
+        return None
+
+    def get_kind_display(self):
+        return dict(AssignmentKindChoices).get(self.kind)
+
+    @property
+    def assigned_object(self):
+        return self.device or self.virtual_machine
 
     def clean(self):
         if self.device and self.virtual_machine:
@@ -360,12 +380,21 @@ class LicenseAssignment(NetBoxModel):
     ]
 
     def __str__(self):
-        return f"{self.license.license_key} → {self.device or self.virtual_machine} ({self.volume})"
+        return f"{self.license.license_key} → {self.assigned_object} ({self.volume})"
 
     def get_absolute_url(self):
         return reverse("plugins:license_management:licenseassignment", args=[self.pk])
-    
+
     class Meta:
         verbose_name = "License Assignments"
         verbose_name_plural = "License Assignments"
-        
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(device__isnull=False) | models.Q(virtual_machine__isnull=False),
+                name='licenseassign_either_device_or_vm_required'
+            ),
+            models.CheckConstraint(
+                check=~(models.Q(device__isnull=False) & models.Q(virtual_machine__isnull=False)),
+                name='licenseassign_only_one_target_allowed'
+            )
+        ]

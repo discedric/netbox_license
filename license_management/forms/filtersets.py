@@ -12,7 +12,8 @@ from ..choices import (
     LicenseModelChoices,
     VolumeRelationChoices,
     LicenseStatusChoices,
-    LicenseAssignmentStatusChoices
+    LicenseAssignmentStatusChoices,
+    AssignmentKindChoices,
 )
 
 # ---------- LicenseType ----------
@@ -230,7 +231,7 @@ class LicenseAssignmentFilterForm(NetBoxModelFilterSetForm):
     fieldsets = (
         FieldSet('q', name='Search'),
         FieldSet('manufacturer_id', 'license', 'license__license_type_id', name='License Info'),
-        FieldSet('device_manufacturer_id', 'device_id', 'device_type_id', 'virtual_machine_id', 'virtual_machine__cluster_id', name='Assignment Target'),
+        FieldSet('kind','device_manufacturer_id', 'device_id', 'device_type_id', 'virtual_machine_id', 'virtual_machine__cluster_id', name='Assignment Target'),
         FieldSet('assigned_to__gte', 'assigned_to__lte', 'volume', name='Assignment Details'),
         FieldSet('comments', name='Metadata'),
     )
@@ -254,6 +255,13 @@ class LicenseAssignmentFilterForm(NetBoxModelFilterSetForm):
         queryset=LicenseType.objects.all(),
         required=False,
         label="License Type"
+    )
+
+    kind = forms.MultipleChoiceField(
+        choices=AssignmentKindChoices,
+        required=False,
+        label="Kind",
+        widget=forms.SelectMultiple()
     )
 
     device_manufacturer_id = DynamicModelMultipleChoiceField(
