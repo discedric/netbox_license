@@ -1,5 +1,6 @@
 from django import forms
 from netbox.forms import NetBoxModelForm
+from utilities.forms.widgets import DatePicker
 from utilities.forms.fields import DynamicModelChoiceField, CommentField, SlugField
 from utilities.forms.rendering import FieldSet, TabbedGroups
 from django.utils.html import format_html
@@ -153,8 +154,17 @@ class LicenseForm(NetBoxModelForm):
 
     license_key = forms.CharField(required=True, label="License Key")
 
-    purchase_date = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}), label="Purchase Date")
-    expiry_date = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}), label="Expiry Date")
+    purchase_date = forms.DateField(
+        required=False,
+        widget=DatePicker(attrs={'is_clearable': True}),
+        label="Purchase Date"
+    )
+
+    expiry_date = forms.DateField(
+        required=False,
+        widget=DatePicker(attrs={'is_clearable': True}),
+        label="Expiry Date"
+    )
 
     comment = CommentField()
 
