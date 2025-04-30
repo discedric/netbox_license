@@ -237,6 +237,13 @@ class License(NetBoxModel):
         if self.expiry_date:
             days_left = (self.expiry_date - today).days
 
+            if days_left < 0:
+                color = "danger"
+            elif days_left < 90:
+                color = "warning"
+            else:
+                color = "success"
+
             if self.purchase_date:
                 total_days = (self.expiry_date - self.purchase_date).days
                 if total_days > 0:
@@ -246,15 +253,7 @@ class License(NetBoxModel):
                 else:
                     percent = 100
             else:
-                percent = 100 if days_left < 0 else 10
-
-            # Set color
-            if days_left < 0:
-                color = "danger"
-            elif days_left < 90:
-                color = "warning"
-            else:
-                color = "success"
+                percent = 100  
 
             return {
                 "percent": max(0, min(percent, 100)),
