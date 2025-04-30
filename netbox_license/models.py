@@ -61,7 +61,7 @@ class LicenseType(NetBoxModel):
     )
     base_license = models.ForeignKey(
         'self',
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name="expansions",
@@ -113,10 +113,7 @@ class LicenseType(NetBoxModel):
     def get_absolute_url(self):
         return reverse("plugins:netbox_license:licensetype", args=[self.pk])
     
-    def delete(self, *args, **kwargs):
-        if self.licenses.exists():
-            raise ValidationError("This license type cannot be deleted because licenses are still linked to it.")
-        super().delete(*args, **kwargs)
+
 
     class Meta:
         verbose_name = "License Type"
@@ -151,7 +148,7 @@ class License(NetBoxModel):
     parent_license = models.ForeignKey(
         to='self',
         null=True, blank=True,
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         related_name="sub_licenses",
         help_text="Link to parent license for extensions."
     )
@@ -200,12 +197,7 @@ class License(NetBoxModel):
             return f"{self.current_usage()}/∞"
         return f"{self.current_usage()}/{self.volume_limit}"
     
-    def delete(self, *args, **kwargs):
-        if self.assignments.exists():
-            raise ValidationError("This license cannot be deleted because it is still assigned.")
-        if self.sub_licenses.exists():
-            raise ValidationError("This base license cannot be deleted because expansion licenses are still linked to it.")
-        super().delete(*args, **kwargs)
+    
 
     @property
     def is_parent_license(self):

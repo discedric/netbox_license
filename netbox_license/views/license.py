@@ -95,7 +95,6 @@ class LicenseEditView(generic.ObjectEditView):
 
 
 
-
 @register_model_view(License, 'delete')
 class LicenseDeleteView(generic.ObjectDeleteView):
     """View for deleting a license"""
