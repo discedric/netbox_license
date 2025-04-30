@@ -20,4 +20,5 @@ urlpatterns = [
     path('assignments/<int:pk>/',include(get_model_urls('license_management', 'licenseassignment'))),
     path('assignments/<int:pk>/changelog/',views.LicenseAssignmentChangeLogView.as_view(),name='licenseassignment_changelog'),
     path('assignments/<int:pk>/journal/', views.LicenseAssignmentJournalView.as_view(), name='licenseassignment_journal'),
+    
 ]

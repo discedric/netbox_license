@@ -157,6 +157,7 @@ class LicenseFilterSet(NetBoxModelFilterSet):
 
     purchase_date = django_filters.DateFromToRangeFilter(label="Purchase Date (Between)")
     expiry_date = django_filters.DateFromToRangeFilter(label="Expiry Date (Between)")
+    base_license_type_id = django_filters.NumberFilter(method='filter_by_base_license_type')
 
     class Meta:
         model = License
@@ -166,6 +167,7 @@ class LicenseFilterSet(NetBoxModelFilterSet):
             "child_license", "is_parent_license", "is_child_license",
             "purchase_date", "expiry_date", "is_assigned",
         ]
+
 
     def filter_is_parent_license(self, queryset, name, value):
         if value:
@@ -178,6 +180,16 @@ class LicenseFilterSet(NetBoxModelFilterSet):
         if value is False:
             return queryset.filter(assignments__isnull=True)
         return queryset
+
+
+    def filter_by_base_license_type(self, queryset, name, value):
+        try:
+            license_type = LicenseType.objects.get(pk=value)
+            if license_type.license_model == "expansion" and license_type.base_license:
+                return queryset.filter(license_type=license_type.base_license)
+        except LicenseType.DoesNotExist:
+            return queryset.none()
+        return queryset.none()
 
     def search(self, queryset, name, value):
         if not value.strip():
