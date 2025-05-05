@@ -93,6 +93,19 @@ class LicenseEditView(generic.ObjectEditView):
     form = LicenseForm
     default_return_url = 'plugins:netbox_license:license_list'
 
+    def get_initial(self):
+        initial = super().get_initial()
+        request = self.request
+
+        if request.GET.get("parent_license"):
+            initial["parent_license"] = request.GET.get("parent_license")
+        if request.GET.get("license_type"):
+            initial["license_type"] = request.GET.get("license_type")
+        if request.GET.get("manufacturer"):
+            initial["manufacturer"] = request.GET.get("manufacturer")
+
+        return initial
+
 
 
 @register_model_view(License, 'delete')

@@ -128,12 +128,13 @@
       </table>
     </div>
 
+    {% if object.license_type.license_model != 'expansion' %}
     <div class="card mt-3">
       <h2 class="card-header d-flex justify-content-between align-items-center">
-        Sub Licenses
+        Child Licenses
         <div class="card-actions">
           <a href="{% url 'plugins:netbox_license:license_add' %}?parent_license={{ object.pk }}&license_type={{ object.license_type.pk }}&manufacturer={{ object.manufacturer.pk }}" class="btn btn-ghost-primary btn-sm">
-            <span class="mdi mdi-plus-thick" aria-hidden="true"></span> Add Sub License
+            <span class="mdi mdi-plus-thick" aria-hidden="true"></span> Add Child License
           </a>
         </div>
       </h2>
@@ -147,28 +148,28 @@
           </tr>
         </thead>
         <tbody>
-          {% for sub in object.sub_licenses.all %}
+          {% for child in object.sub_licenses.all %}
           <tr>
-            <td>{{ sub|linkify }}</td>
-            <td>{{ sub.license_type|linkify|placeholder }}</td>
+            <td>{{ child|linkify }}</td>
+            <td>{{ child.license_type|linkify|placeholder }}</td>
             <td>
-              {% if sub.license_type.volume_type == 'unlimited' %}
+              {% if child.license_type.volume_type == 'unlimited' %}
                 Unlimited
               {% else %}
-                {{ sub.volume_limit|placeholder }}
+                {{ child.volume_limit|placeholder }}
               {% endif %}
             </td>
-            <td>{{ sub.expiry_date|date:"Y-m-d"|placeholder }}</td>
+            <td>{{ child.expiry_date|date:"Y-m-d"|placeholder }}</td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="4" class="text-muted">No sub licenses found.</td>
+            <td colspan="4" class="text-muted">No child licenses found.</td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
-    
+    {% endif %}
 
     {% include 'inc/panels/tags.html' %}
     {% include 'inc/panels/comments.html' %}

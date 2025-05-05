@@ -24,6 +24,11 @@ class LicenseTypeTable(NetBoxTable):
         url = reverse('plugins:netbox_license:license_list') + f'?license_type_id={record.pk}'
         return format_html('<a href="{}">{}</a>', url, value)
 
+    base_license = tables.Column(
+        accessor='base_license',
+        verbose_name='Base License',
+        linkify=True
+    )
     product_code = tables.Column(verbose_name="Product Code")
     ean_code = tables.Column(verbose_name="EAN Code")
     volume_type = tables.Column(verbose_name="Volume Type")
@@ -35,13 +40,13 @@ class LicenseTypeTable(NetBoxTable):
     class Meta(NetBoxTable.Meta):
         model = LicenseType
         fields = (
-            "id", "name", "slug", "manufacturer",
+            "id", "name", "slug", "manufacturer","base_license",
             "product_code", "ean_code",
             "volume_type", "volume_relation", "license_model", "purchase_model",
             "description"
         )
         default_columns = (
-            "name", "manufacturer",
+            "name", "manufacturer","base_license",
             "product_code", "volume_type",
             "license_model", "instances",
         )

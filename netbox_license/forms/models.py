@@ -151,8 +151,14 @@ class LicenseForm(NetBoxModelForm):
         query_params={'base_license_type_id': '$license_type'},
     )
 
-
     license_key = forms.CharField(required=True, label="License Key")
+
+    volume_limit = forms.IntegerField(
+        required=False,
+        min_value=1,
+        label="Volume Limit",
+        help_text="Set to 1 for single, >1 for volume. Required for volume licenses."
+    )
 
     purchase_date = forms.DateField(
         required=False,
@@ -185,6 +191,12 @@ class LicenseForm(NetBoxModelForm):
             or getattr(self.instance, "license_type_id", None)
         )
 
+        parent_license_id = (
+            self.initial.get("parent_license")
+            or self.data.get("parent_license")
+            or getattr(self.instance, "parent_license_id", None)
+        )
+
         license_type = None
         if license_type_id:
             try:
@@ -192,16 +204,16 @@ class LicenseForm(NetBoxModelForm):
             except LicenseType.DoesNotExist:
                 pass
 
-        if license_type:
-            if license_type.license_model == LicenseModelChoices.EXPANSION:
-                base_type = license_type.base_license
-                if base_type:
-                    self.fields["parent_license"].queryset = License.objects.filter(
-                        license_type=base_type
-                    )
-                self.fields["parent_license"].required = True
-            else:
-                self.fields["parent_license"].required = False
+        if license_type and license_type.license_model == LicenseModelChoices.EXPANSION:
+            base_type = license_type.base_license
+            if base_type:
+                self.fields["parent_license"].queryset = License.objects.filter(license_type=base_type)
+            self.fields["parent_license"].required = True
+        else:
+            self.fields["parent_license"].required = False
+
+        if parent_license_id and not self.fields["parent_license"].queryset.exists():
+            self.fields["parent_license"].queryset = License.objects.filter(pk=parent_license_id)
 
     def clean(self):
         cleaned_data = super().clean()
@@ -210,6 +222,7 @@ class LicenseForm(NetBoxModelForm):
 
         license_type = cleaned_data.get("license_type")
         parent_license = cleaned_data.get("parent_license")
+        volume_limit = cleaned_data.get("volume_limit")
 
         if license_type:
             if license_type.license_model == LicenseModelChoices.EXPANSION:
@@ -221,8 +234,12 @@ class LicenseForm(NetBoxModelForm):
                 if parent_license:
                     self.add_error("parent_license", "Base licenses cannot have a parent license.")
 
-        return cleaned_data
+            if license_type.volume_type == "single" and not volume_limit:
+                cleaned_data["volume_limit"] = 1 
+            elif license_type.volume_type == "volume" and not volume_limit:
+                self.add_error("volume_limit", "Volume limit is verplicht bij volume-licenties.")
 
+        return cleaned_data
 
 # ---------- Assignments ----------
 
