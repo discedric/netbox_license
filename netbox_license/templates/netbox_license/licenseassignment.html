@@ -1,13 +1,18 @@
 {% extends 'generic/object.html' %}
 {% load helpers %}
 
-{% block title %}License Assignment{% endblock %}
+{% block title %}License Assignment ID {{ object.pk }}{% endblock %}
 
 {% block breadcrumbs %}
   {{ block.super }}
-  <li class="breadcrumb-item active">{{ object }}</li>
+  {% if object.license.license_type %}
+    <li class="breadcrumb-item">
+      <a href="{% url 'plugins:netbox_license:licenseassignment_list' %}?license__license_type_id={{ object.license.license_type.pk }}">
+      {{ object}}
+      </a>
+    </li>
+  {% endif %}
 {% endblock %}
-
 {% block content %}
 <div class="row">
   <div class="col-md-6">

@@ -221,6 +221,11 @@ class LicenseFilterForm(NetBoxModelFilterSetForm):
         widget=forms.DateInput(attrs={"type": "date"})
     )
 
+    base_license_type_id = forms.IntegerField(
+        required=False,
+        widget=forms.HiddenInput()
+    )
+
 
 # ---------- Assignments ----------
 

@@ -4,6 +4,7 @@ from utilities.forms.widgets import DatePicker
 from utilities.forms.fields import DynamicModelChoiceField, CommentField, SlugField
 from utilities.forms.rendering import FieldSet, TabbedGroups
 from django.utils.html import format_html
+from django.db.models import Q
 from dcim.models import Manufacturer, Device
 from virtualization.models import VirtualMachine
 from ..models import License, LicenseType, LicenseAssignment
@@ -207,13 +208,18 @@ class LicenseForm(NetBoxModelForm):
         if license_type and license_type.license_model == LicenseModelChoices.EXPANSION:
             base_type = license_type.base_license
             if base_type:
-                self.fields["parent_license"].queryset = License.objects.filter(license_type=base_type)
+                self.fields["parent_license"].queryset = License.objects.filter(
+                    Q(license_type=base_type) | Q(pk=parent_license_id)
+                ).distinct()
+            else:
+                self.fields["parent_license"].queryset = License.objects.filter(pk=parent_license_id)
             self.fields["parent_license"].required = True
         else:
+            self.fields["parent_license"].queryset = (
+                License.objects.filter(pk=parent_license_id)
+                if parent_license_id else License.objects.none()
+            )
             self.fields["parent_license"].required = False
-
-        if parent_license_id and not self.fields["parent_license"].queryset.exists():
-            self.fields["parent_license"].queryset = License.objects.filter(pk=parent_license_id)
 
     def clean(self):
         cleaned_data = super().clean()

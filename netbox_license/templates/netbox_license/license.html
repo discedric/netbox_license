@@ -4,14 +4,19 @@
 {% load plugins %}
 
 {% block title %}
-  {{ object.name }} - {{ object.license_key }}
+  {{ object.license_key }}
 {% endblock %}
 
 {% block breadcrumbs %}
   {{ block.super }}
-  <li class="breadcrumb-item active">{{ object }}</li>
+  {% if object.license_type %}
+    <li class="breadcrumb-item">
+      <a href="{% url 'plugins:netbox_license:license_list' %}?license_type_id={{ object.license_type.pk }}">
+        {{ object}}
+      </a>
+    </li>
+  {% endif %}
 {% endblock %}
-
 {% block content %}
 <div class="row">
   <div class="col-md-6">
@@ -133,7 +138,7 @@
       <h2 class="card-header d-flex justify-content-between align-items-center">
         Child Licenses
         <div class="card-actions">
-          <a href="{% url 'plugins:netbox_license:license_add' %}?parent_license={{ object.pk }}&license_type={{ object.license_type.pk }}&manufacturer={{ object.manufacturer.pk }}" class="btn btn-ghost-primary btn-sm">
+          <a href="{% url 'plugins:netbox_license:license_add' %}?parent_license={{ object.pk }}&manufacturer={{ object.manufacturer.pk }}" class="btn btn-ghost-primary btn-sm">
             <span class="mdi mdi-plus-thick" aria-hidden="true"></span> Add Child License
           </a>
         </div>

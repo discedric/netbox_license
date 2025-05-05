@@ -317,6 +317,7 @@ class LicenseAssignmentImportForm(NetBoxModelImportForm):
         label='Description',
         help_text='Optional description of the assignment.'
     )
+
     comments = forms.CharField(
         required=False,
         label='Comments',
@@ -335,56 +336,68 @@ class LicenseAssignmentImportForm(NetBoxModelImportForm):
             "comments",
         ]
 
-def clean(self):
-    cleaned_data = super().clean()
+    def _get_validation_exclusions(self):
+        exclude = super()._get_validation_exclusions()
+        if 'device' in exclude:
+            exclude.remove('device')
+        if 'virtual_machine' in exclude:
+            exclude.remove('virtual_machine')
+        return exclude
 
-    kind = cleaned_data.get("model_kind")
-    name = cleaned_data.get("model_name")
-    license = cleaned_data.get("license")
-    volume = cleaned_data.get("volume")
+    def clean_model_name(self):
+        kind = self.cleaned_data.get("model_kind")
+        name = self.cleaned_data.get("model_name")
 
-    if not kind or not name:
-        raise forms.ValidationError("Both 'model_kind' and 'model_name' are required.")
+        if not kind or not name:
+            raise forms.ValidationError("Both 'model_kind' and 'model_name' are required.")
 
-    if kind == AssignmentKindChoices.DEVICE:
         try:
-            device = Device.objects.get(name=name)
-            cleaned_data["device"] = device
-            cleaned_data["virtual_machine"] = None
-        except Device.DoesNotExist:
-            raise forms.ValidationError(f"Device '{name}' not found.")
+            if kind == AssignmentKindChoices.DEVICE:
+                device = Device.objects.get(name=name)
+                setattr(self.instance, "device", device)
+                setattr(self.instance, "virtual_machine", None)
+            elif kind == AssignmentKindChoices.VM:
+                vm = VirtualMachine.objects.get(name=name)
+                setattr(self.instance, "virtual_machine", vm)
+                setattr(self.instance, "device", None)
+            else:
+                raise forms.ValidationError(f"Invalid kind: {kind}. Must be 'device' or 'virtual_machine'.")
+        except ObjectDoesNotExist:
+            raise forms.ValidationError(f"{kind.capitalize()} '{name}' not found.")
 
-    elif kind == AssignmentKindChoices.VM:
-        try:
-            vm = VirtualMachine.objects.get(name=name)
-            cleaned_data["virtual_machine"] = vm
-            cleaned_data["device"] = None
-        except VirtualMachine.DoesNotExist:
-            raise forms.ValidationError(f"Virtual Machine '{name}' not found.")
-    else:
-        raise forms.ValidationError(f"Invalid kind: {kind}. Must be 'device' or 'virtual_machine'.")
+        return name
 
-    if not license:
-        raise forms.ValidationError("The selected license could not be found. Please check the license key.")
+    def clean(self):
+        cleaned_data = super().clean()
+        if not cleaned_data:
+            return cleaned_data
 
-    license_type = license.license_type
-    if not license_type:
-        raise forms.ValidationError("License must be linked to a License Type.")
+        license = cleaned_data.get("license")
+        volume = cleaned_data.get("volume")
 
-    if license_type.volume_type == "single":
-        if volume != 1:
-            raise forms.ValidationError("Single licenses must be assigned with a volume of 1.")
-        if license.assignments.exists():
-            raise forms.ValidationError("Single licenses can only have one assignment.")
+        if not license:
+            raise forms.ValidationError("The selected license could not be found.")
 
-    elif license_type.volume_type == "volume":
-        total_assigned = license.assignments.aggregate(models.Sum("volume"))["volume__sum"] or 0
-        if (total_assigned + volume) > (license.volume_limit or 0):
-            raise forms.ValidationError(
-                f"Assigned volume exceeds limit ({license.volume_limit}). Already assigned: {total_assigned}."
-            )
+        license_type = license.license_type
+        if not license_type:
+            raise forms.ValidationError("License must be linked to a License Type.")
 
-    return cleaned_data
+        if license_type.volume_type == "single":
+            if volume != 1:
+                raise forms.ValidationError("Single licenses must be assigned with a volume of 1.")
+            if license.assignments.exists():
+                raise forms.ValidationError("Single licenses can only have one assignment.")
+
+        elif license_type.volume_type == "volume":
+            total_assigned = license.assignments.aggregate(models.Sum("volume"))["volume__sum"] or 0
+            if (total_assigned + volume) > (license.volume_limit or 0):
+                raise forms.ValidationError(
+                    f"Assigned volume exceeds limit ({license.volume_limit}). Already assigned: {total_assigned}."
+                )
+
+        return cleaned_data
+
+
 
 
 
