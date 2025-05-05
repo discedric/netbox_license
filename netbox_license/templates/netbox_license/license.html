@@ -12,7 +12,7 @@
   {% if object.license_type %}
     <li class="breadcrumb-item">
       <a href="{% url 'plugins:netbox_license:license_list' %}?license_type_id={{ object.license_type.pk }}">
-        {{ object}}
+        {{ object.license_type }}
       </a>
     </li>
   {% endif %}

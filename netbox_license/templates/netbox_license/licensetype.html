@@ -9,7 +9,12 @@
 
 {% block breadcrumbs %}
   {{ block.super }}
-  <li class="breadcrumb-item active">{{ object }}</li>
+  <li class="breadcrumb-item">
+    <a href="{% url 'plugins:netbox_license:licensetype_list' %}?manufacturer_id={{ object.manufacturer.pk }}">
+      {{ object.manufacturer }}
+    </a>
+  </li>
+  
 {% endblock %}
 
 {% block content %}
