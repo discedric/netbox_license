@@ -31,8 +31,14 @@ class LicenseProgressBarInjector(PluginTemplateExtension):
     model = 'netbox_license.license'
 
     def right_page(self):
+        record = self.context.get('object')
+        License = apps.get_model('netbox_license', 'License')
+
+        if not isinstance(record, License):
+            return ''
+
         return self.render('netbox_license/inc/license_progressbar.html', {
-            'record': self.context['object']
+            'record': record
         })
 
 
