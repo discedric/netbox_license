@@ -30,6 +30,10 @@ netbox_license/graphql/__init__.py
 netbox_license/graphql/filters.py
 netbox_license/graphql/schema.py
 netbox_license/graphql/types.py
+netbox_license/migrations/0001_initial.py
+netbox_license/migrations/0002_alter_license_parent_license_and_more.py
+netbox_license/migrations/0003_alter_licenseassignment_license.py
+netbox_license/migrations/__init__.py
 netbox_license/views/__init__.py
 netbox_license/views/license.py
 netbox_license/views/licenseassignment.py

@@ -41,21 +41,22 @@ class DeviceLicenseExtension(PluginTemplateExtension):
 
     def left_page(self):
         object = self.context.get("object")
+        if not isinstance(object, apps.get_model("dcim", "Device")):
+            return ""
+
         LicenseAssignment = apps.get_model("netbox_license", "LicenseAssignment")
         license_assignments = LicenseAssignment.objects.filter(device=object)
 
         context = {
             "licenses": license_assignments,
             "object": object,
-            "related_object_counts": (
-                (
-                    "Assigned Licenses",
-                    "plugins:netbox_license:licenseassignment_list",
-                    "device_id",
-                    object.pk,
-                    license_assignments.count()
-                ),
-            )
+            "related_object_counts": ((
+                "Assigned Licenses",
+                "plugins:netbox_license:licenseassignment_list",
+                "device_id",
+                object.pk,
+                license_assignments.count()
+            ),)
         }
 
         return self.render("netbox_license/inc/device_info.html", extra_context=context)
@@ -66,21 +67,22 @@ class VirtualMachineLicenseExtension(PluginTemplateExtension):
 
     def left_page(self):
         object = self.context.get("object")
+        if not isinstance(object, apps.get_model("virtualization", "VirtualMachine")):
+            return ""
+
         LicenseAssignment = apps.get_model("netbox_license", "LicenseAssignment")
         license_assignments = LicenseAssignment.objects.filter(virtual_machine=object)
 
         context = {
             "licenses": license_assignments,
             "object": object,
-            "related_object_counts": (
-                (
-                    "Assigned Licenses",
-                    "plugins:netbox_license:licenseassignment_list",
-                    "virtual_machine_id",
-                    object.pk,
-                    license_assignments.count()
-                ),
-            )
+            "related_object_counts": ((
+                "Assigned Licenses",
+                "plugins:netbox_license:licenseassignment_list",
+                "virtual_machine_id",
+                object.pk,
+                license_assignments.count()
+            ),)
         }
 
         return self.render("netbox_license/inc/virtual_machines_info.html", extra_context=context)
@@ -91,38 +93,50 @@ class ClustersLicenseExtension(PluginTemplateExtension):
 
     def left_page(self):
         object = self.context.get("object")
+        if not isinstance(object, apps.get_model("virtualization", "Cluster")):
+            return ""
+
         LicenseAssignment = apps.get_model("netbox_license", "LicenseAssignment")
         license_assignments = LicenseAssignment.objects.filter(virtual_machine__cluster=object)
 
         context = {
             "licenses": license_assignments,
             "object": object,
-            "related_object_counts": (
-                (
-                    "Assigned Licenses",
-                    "plugins:netbox_license:licenseassignment_list",
-                    "virtual_machine__cluster_id",
-                    object.pk,
-                    license_assignments.count()
-                ),
-            )
+            "related_object_counts": ((
+                "Assigned Licenses",
+                "plugins:netbox_license:licenseassignment_list",
+                "virtual_machine__cluster_id",
+                object.pk,
+                license_assignments.count()
+            ),)
         }
 
         return self.render("netbox_license/inc/clusters_info.html", extra_context=context)
+
 
 class LicenseTypeExtension(PluginTemplateExtension):
     model = "netbox_license.licensetype"
 
     def right_page(self):
-        licenses = self.context['object'].licenses.all()
-        license_assignments = sum(l.assignments.count() for l in licenses)
-        
+        object = self.context.get("object")
+
+        LicenseType = apps.get_model("netbox_license", "LicenseType")
+        if not isinstance(object, LicenseType):
+            return ""
+
+        LicenseAssignment = apps.get_model("netbox_license", "LicenseAssignment")
+        license_assignments = LicenseAssignment.objects.filter(
+            license__license_type=object
+        ).count()
+
         context = {
-            "object": self.context["object"],
+            "object": object,
             "license_assignments": license_assignments,
         }
 
         return self.render("netbox_license/inc/licensetype_related.html", extra_context=context)
+
+
 
 template_extensions = (
     DeviceLicenseExtension,
