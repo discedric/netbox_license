@@ -296,7 +296,8 @@ class License(NetBoxModel):
 class LicenseAssignment(NetBoxModel):
 
     license = models.ForeignKey(
-        "License", on_delete=models.CASCADE, related_name="assignments"
+        "License", on_delete=models.CASCADE, related_name="assignments",
+        null=True, blank=True
     )
     device = models.ForeignKey(
         Device, on_delete=models.CASCADE, related_name="license_assignments",
@@ -383,7 +384,11 @@ class LicenseAssignment(NetBoxModel):
     ]
 
     def __str__(self):
-        return f"{self.license.license_key} → {self.assigned_object} ({self.volume})"
+        license_key = getattr(self.license, "license_key", "Missing license")
+        assigned_obj = self.assigned_object or "Unassigned"
+        return f"{license_key} → {assigned_obj} ({self.volume})"
+
+
 
     def get_absolute_url(self):
         return reverse("plugins:netbox_license:licenseassignment", args=[self.pk])

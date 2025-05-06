@@ -68,6 +68,7 @@ class LicenseAssignmentEditView(generic.ObjectEditView):
 class LicenseAssignmentDeleteView(generic.ObjectDeleteView):
     """View to delete a license assignment."""
     queryset = LicenseAssignment.objects.all()
+    default_return_url = 'plugins:netbox_license:licenseassignment_list'
 
 # -------------------- bulk --------------------
 
@@ -84,9 +85,11 @@ class LicenseAssignmentBulkEditView(generic.BulkEditView):
     filterset = filtersets.LicenseAssignmentFilterSet
     table = tables.LicenseAssignmentTable
     form = LicenseAssignmentBulkEditForm
+    default_return_url = 'plugins:netbox_license:licenseassignment_list'
 
 @register_model_view(LicenseAssignment, 'bulk_delete', path='delete', detail=False)
 class LicenseAssignmentBulkDeleteView(generic.BulkDeleteView):
     """View for bulk deleting license assignments."""
     queryset = LicenseAssignment.objects.all()
     table = tables.LicenseAssignmentTable
+    default_return_url = 'plugins:netbox_license:licenseassignment_list'

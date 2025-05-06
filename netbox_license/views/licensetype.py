@@ -64,6 +64,7 @@ class LicenseTypeEditView(generic.ObjectEditView):
 @register_model_view(LicenseType, 'delete')
 class LicenseTypeDeleteView(generic.ObjectDeleteView):
     queryset = LicenseType.objects.all()
+    default_return_url = 'plugins:netbox_license:licensetype_list'
 
 # -------------------- bulk --------------------
 
@@ -86,3 +87,4 @@ class LicenseTypeBulkEditView(generic.BulkEditView):
 class LicenseTypeBulkDeleteView(generic.BulkDeleteView):
     queryset = LicenseType.objects.all()
     table = tables.LicenseTypeTable
+    default_return_url = 'plugins:netbox_license:licensetype_list'

@@ -112,6 +112,7 @@ class LicenseEditView(generic.ObjectEditView):
 class LicenseDeleteView(generic.ObjectDeleteView):
     """View for deleting a license"""
     queryset = License.objects.all()
+    default_return_url = 'plugins:netbox_license:license_list'
 
 # -------------------- bulk --------------------
 

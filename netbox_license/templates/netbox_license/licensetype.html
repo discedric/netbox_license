@@ -47,6 +47,12 @@
           <th scope="row">Volume Type</th>
           <td>{{ object.get_volume_type_display }}</td>
         </tr>
+        {% if object.volume_relation %}
+        <tr>
+          <th scope="row">Volume Relation</th>
+          <td>{{ object.get_volume_relation_display }}</td>
+        </tr>
+        {% endif %}
         <tr>
           <th scope="row">License Model</th>
           <td>{{ object.get_license_model_display }}</td>

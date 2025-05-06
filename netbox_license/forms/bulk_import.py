@@ -367,6 +367,13 @@ class LicenseAssignmentImportForm(NetBoxModelImportForm):
 
         return name
 
+    def clean_license(self):
+        license = self.cleaned_data.get("license")
+        if license is None:
+            raise forms.ValidationError("License Key not found. Make sure the license exists.")
+        return license
+
+
     def clean(self):
         cleaned_data = super().clean()
         if not cleaned_data:
@@ -374,9 +381,6 @@ class LicenseAssignmentImportForm(NetBoxModelImportForm):
 
         license = cleaned_data.get("license")
         volume = cleaned_data.get("volume")
-
-        if not license:
-            raise forms.ValidationError("The selected license could not be found.")
 
         license_type = license.license_type
         if not license_type:
