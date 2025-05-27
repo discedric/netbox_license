@@ -2,6 +2,9 @@ from netbox.plugins import PluginConfig
 from django.urls import include, path
 from .version import __version__
 from .template_content import template_extensions
+from extras.plugins import plugin_features
+from netbox_license.models import License, LicenseType, LicenseAssignment
+
 
 class LicenseManagementConfig(PluginConfig):
     name = 'netbox_license'
@@ -20,9 +23,7 @@ class LicenseManagementConfig(PluginConfig):
     }
 
     def ready(self):
-        self.urlpatterns = [
-            path('plugin/netbox_license/', include('netbox_license.urls')),
-        ]
-        super().ready()
+            super().ready()
+            from . import signals
 
 config = LicenseManagementConfig
