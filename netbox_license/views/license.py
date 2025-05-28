@@ -2,19 +2,20 @@ from netbox.views import generic
 from utilities.views import register_model_view
 from django.db.models import OuterRef, Subquery, Sum, Case, When, BooleanField, Value
 from django.db.models.functions import Coalesce
-from ..models import License, LicenseAssignment
-from .. import filtersets, tables
+from netbox_license.models.license import License
+from netbox_license.models.licenseassignment import LicenseAssignment
+from .. import tables
 from ..forms.filtersets import LicenseFilterForm
 from ..forms.bulk_edit import LicenseBulkEditForm
 from ..forms.bulk_import import LicenseImportForm
 from ..forms.models import LicenseForm
+from netbox_license.filtersets.licenses import LicenseFilterSet
+
 
 
 __all__ = (
     'LicenseView',
     'LicenseListView',
-    'LicenseChangeLogView',
-    'LicenseJournalView',
     'LicenseEditView',
     'LicenseDeleteView',
     'LicenseBulkImportView',
@@ -33,31 +34,12 @@ class LicenseView(generic.ObjectView):
         context = super().get_extra_context(request, instance)
         return context
 
-
-class LicenseChangeLogView(generic.ObjectChangeLogView):
-    """View for displaying the changelog of a License object"""
-    queryset = License.objects.all()
-    model = License
-
-    def get(self, request, pk):
-        return super().get(request, pk=pk, model=self.model)
-
-
-class LicenseJournalView(generic.ObjectJournalView):
-    """View for displaying the journal of a License object"""
-    queryset = License.objects.all()
-    model = License
-
-    def get(self, request, pk):
-        return super().get(request, pk=pk, model=self.model)
-
-
 @register_model_view(License, 'list', path='', detail=False)
 class LicenseListView(generic.ObjectListView):
     """View for displaying a list of Licenses"""
     queryset = License.objects.all()
     table = tables.LicenseTable
-    filterset = filtersets.LicenseFilterSet
+    filterset = LicenseFilterSet
     filterset_form = LicenseFilterForm
 
     def get_queryset(self, request):
@@ -101,9 +83,7 @@ class LicenseEditView(generic.ObjectEditView):
             initial["parent_license"] = request.GET.get("parent_license")
         if request.GET.get("license_type"):
             initial["license_type"] = request.GET.get("license_type")
-        if request.GET.get("manufacturer"):
-            initial["manufacturer"] = request.GET.get("manufacturer")
-
+        
         return initial
 
 
@@ -127,7 +107,7 @@ class LicenseBulkImportView(generic.BulkImportView):
 class LicenseBulkEditView(generic.BulkEditView):
     """View for bulk editing licenses."""
     queryset = License.objects.all()
-    filterset = filtersets.LicenseFilterSet
+    filterset = LicenseFilterSet
     table = tables.LicenseTable
     form = LicenseBulkEditForm
     default_return_url = 'plugins:netbox_license:license_list'

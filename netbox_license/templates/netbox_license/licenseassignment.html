@@ -37,7 +37,7 @@
         </tr>
         <tr>
           <th scope="row">License Manufacturer</th>
-          <td>{{ object.license.manufacturer|linkify|placeholder }}</td>
+          <td>{{ object.license.license_type.manufacturer|linkify|placeholder }}</td>  <!-- ✅ -->
         </tr>
         <tr>
           <th scope="row">Volume Type</th>

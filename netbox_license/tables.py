@@ -72,10 +72,12 @@ class LicenseTable(NetBoxTable):
         verbose_name="Product Key"
     )
 
-    serial_number = tables.Column(verbose_name="Serial Number")
+    serial_number = tables.Column(
+        verbose_name="Serial Number"
+    )
     manufacturer = tables.Column(
+        accessor="license_type.manufacturer",
         verbose_name="License Manufacturer",
-        accessor="manufacturer",
         linkify=True
     )
     parent_license = tables.Column(
@@ -181,10 +183,11 @@ class LicenseAssignmentTable(NetBoxTable):
         order_by='license__license_type__name'
     )
     manufacturer = tables.Column(
-        accessor="license.manufacturer",
+        accessor="license.license_type.manufacturer",
         verbose_name="License Manufacturer",
         linkify=True
     )
+
     device = tables.Column(
         accessor="device",
         verbose_name="Device",

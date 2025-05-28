@@ -5,7 +5,9 @@ from utilities.forms.fields import CSVChoiceField, CSVModelChoiceField
 from dcim.models import Manufacturer, Device
 from virtualization.models import VirtualMachine
 from django.utils.text import slugify
-from netbox_license.models import License, LicenseType, LicenseAssignment
+from netbox_license.models.license import License
+from netbox_license.models.licenseassignment import LicenseAssignment
+from netbox_license.models.licensetype import LicenseType
 from ..choices import (
     VolumeTypeChoices,
     PurchaseModelChoices,
@@ -163,13 +165,7 @@ class LicenseTypeImportForm(NetBoxModelImportForm):
 # ---------- License ----------
 
 class LicenseImportForm(NetBoxModelImportForm):
-    manufacturer = CSVModelChoiceField(
-        queryset=Manufacturer.objects.all(),
-        to_field_name='name',
-        required=True,
-        help_text='Manufacturer of the license.'
-    )
-
+    
     license_type = CSVModelChoiceField(
         queryset=LicenseType.objects.all(),
         to_field_name='name',
@@ -221,17 +217,16 @@ class LicenseImportForm(NetBoxModelImportForm):
     class Meta:
         model = License
         fields = [
-            "manufacturer", "license_type", "license_key", "serial_number", "description",
+            "license_type", "license_key", "serial_number", "description",
             "purchase_date", "expiry_date", "volume_limit", "parent_license", "comments",
         ]
+
 
     def clean(self):
         super().clean()
 
         license_type = self.cleaned_data.get("license_type")
         if license_type:
-            self.instance.manufacturer = license_type.manufacturer
-
             vt = license_type.volume_type
             volume_limit = self.cleaned_data.get("volume_limit")
 
@@ -278,13 +273,7 @@ class LicenseImportForm(NetBoxModelImportForm):
 # ---------- Assignments ----------
 
 class LicenseAssignmentImportForm(NetBoxModelImportForm):
-    manufacturer = CSVModelChoiceField(
-        queryset=Manufacturer.objects.all(),
-        to_field_name='name',
-        label='Manufacturer',
-        help_text='The license manufacturer.'
-    )
-
+    
     license = CSVModelChoiceField(
         queryset=License.objects.all(),
         to_field_name='license_key',
@@ -327,7 +316,6 @@ class LicenseAssignmentImportForm(NetBoxModelImportForm):
     class Meta:
         model = LicenseAssignment
         fields = [
-            "manufacturer",
             "license",
             "model_kind",
             "model_name",

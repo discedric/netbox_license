@@ -85,7 +85,7 @@
       <h2 class="card-header d-flex justify-content-between align-items-center">
         Expansion Types ({{ object.expansions.count }})
         <div class="card-actions">
-          <a href="{% url 'plugins:netbox_license:licensetype_add' %}?license_model=expansion&base_license={{ object.pk }}&manufacturer={{ object.manufacturer.pk }}" class="btn btn-ghost-primary btn-sm">
+            <a href="{% url 'plugins:netbox_license:licensetype_add' %}?license_model=expansion&base_license={{ object.pk }}" class="btn btn-ghost-primary btn-sm">
             <span class="mdi mdi-plus-thick" aria-hidden="true"></span> Add Expansion Type
           </a>
         </div>

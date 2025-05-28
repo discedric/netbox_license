@@ -4,8 +4,11 @@ from utilities.forms.fields import DynamicModelChoiceField, DynamicModelMultiple
 from utilities.forms.rendering import FieldSet
 from dcim.models import Manufacturer, Device, DeviceType
 from virtualization.models import VirtualMachine, Cluster
-from netbox_license.models import License, LicenseType, LicenseAssignment
-from netbox_license import filtersets
+from netbox_license.models.license import License
+from netbox_license.models.licenseassignment import LicenseAssignment
+from netbox_license.models.licensetype import LicenseType
+from netbox_license.filtersets import licenseassignments, licensetypes
+from netbox_license.filtersets.licenses import LicenseFilterSet
 from ..choices import (
     VolumeTypeChoices,
     PurchaseModelChoices,
@@ -20,7 +23,7 @@ from ..choices import (
 
 class LicenseTypeFilterForm(NetBoxModelFilterSetForm):
     model = LicenseType
-    filterset_class = filtersets.LicenseTypeFilterSet
+    filterset_class = licensetypes.LicenseTypeFilterSet
 
     fieldsets = (
         FieldSet('q', name='Search'),
@@ -79,18 +82,17 @@ class LicenseTypeFilterForm(NetBoxModelFilterSetForm):
 
 class LicenseFilterForm(NetBoxModelFilterSetForm):
     model = License
-    filterset_class = filtersets.LicenseFilterSet
+    filterset_class = LicenseFilterSet
 
     selector_fields = (
-        'manufacturer_id',
+        'license_type__manufacturer_id',
         'volume_type',
         'license_model',
         'license_type_id',
     )
-
     fieldsets = (
         FieldSet('q', name='Search'),
-        FieldSet('manufacturer_id', 'license_key', 'serial_number', 'name', name='License Info'),
+        FieldSet('license_type__manufacturer_id', 'license_key', 'serial_number', 'name', name='License Info'),
         FieldSet('license_model', 'volume_type', 'license_type_id', name='License Type Info'),
         FieldSet('is_parent_license', 'is_child_license', 'parent_license', 'child_license', 'parent_license_type', name='License Relationship'),
         FieldSet('assignments__device_id', 'assignments__virtual_machine_id', 'assignments__virtual_machine__cluster_id', 'is_assigned', name='Assignment Info'),
@@ -99,26 +101,15 @@ class LicenseFilterForm(NetBoxModelFilterSetForm):
 
     q = forms.CharField(required=False, label='Search')
 
-    manufacturer_id = DynamicModelMultipleChoiceField(
+    license_type__manufacturer_id = DynamicModelMultipleChoiceField(
         queryset=Manufacturer.objects.all(),
         required=False,
-        label="License Manufacturer"
+        label="License Manufacturer",
     )
 
-    license_key = forms.CharField(
-        required=False,
-        label="License Key"
-    )
-
-    serial_number = forms.CharField(
-        required=False,
-        label="Serial Number"
-    )
-
-    name = forms.CharField(
-        required=False,
-        label="Name"
-    )
+    license_key = forms.CharField(required=False, label="License Key")
+    serial_number = forms.CharField(required=False, label="Serial Number")
+    name = forms.CharField(required=False, label="Name")
 
     license_model = forms.MultipleChoiceField(
         required=False,
@@ -144,15 +135,13 @@ class LicenseFilterForm(NetBoxModelFilterSetForm):
     parent_license = DynamicModelMultipleChoiceField(
         queryset=License.objects.filter(parent_license__isnull=True),
         required=False,
-        label="Parent License",
-        query_params={'manufacturer_id': '$manufacturer_id'}
+        label="Parent License"
     )
 
     child_license = DynamicModelMultipleChoiceField(
         queryset=License.objects.exclude(parent_license__isnull=True),
         required=False,
-        label="Child Licenses",
-        query_params={'manufacturer_id': '$manufacturer_id'}
+        label="Child Licenses"
     )
 
     parent_license_type = DynamicModelMultipleChoiceField(
@@ -231,7 +220,7 @@ class LicenseFilterForm(NetBoxModelFilterSetForm):
 
 class LicenseAssignmentFilterForm(NetBoxModelFilterSetForm):
     model = LicenseAssignment
-    filterset_class = filtersets.LicenseAssignmentFilterSet
+    filterset_class = licenseassignments.LicenseAssignmentFilterSet
 
     fieldsets = (
         FieldSet('q', name='Search'),
@@ -244,16 +233,15 @@ class LicenseAssignmentFilterForm(NetBoxModelFilterSetForm):
     q = forms.CharField(required=False, label='Search')
 
     manufacturer_id = DynamicModelMultipleChoiceField(
-        queryset=Manufacturer.objects.all(),
-        required=False,
-        label="License Manufacturer",
-    )
+    queryset=Manufacturer.objects.all(),
+    required=False,
+    label="License Manufacturer"
+)
 
     license = DynamicModelMultipleChoiceField(
         queryset=License.objects.all(),
         required=False,
         label="License",
-        query_params={'manufacturer_id': '$manufacturer_id'},
     )
 
     license__license_type_id = DynamicModelMultipleChoiceField(

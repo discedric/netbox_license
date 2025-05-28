@@ -1,7 +1,10 @@
 from django import forms
-from netbox_license.models import License, LicenseType, LicenseAssignment
+from netbox_license.models.license import License
+from netbox_license.models.licenseassignment import LicenseAssignment
+from netbox_license.models.licensetype import LicenseType
 from dcim.models import Device, Manufacturer
-from virtualization.models import VirtualMachine, Cluster
+from utilities.forms.widgets import DatePicker
+from virtualization.models import VirtualMachine
 from ..choices import (
     VolumeTypeChoices,
     PurchaseModelChoices,
@@ -15,16 +18,6 @@ from utilities.forms.fields import DynamicModelChoiceField, CommentField
 
 
 # ---------- LicenseType ----------
-
-from django import forms
-from netbox.forms import NetBoxModelBulkEditForm
-from utilities.forms.fields import CommentField, DynamicModelChoiceField
-from netbox_license.models import LicenseType, Manufacturer
-from netbox_license.choices import (
-    VolumeTypeChoices,
-    LicenseModelChoices,
-    PurchaseModelChoices
-)
 
 class LicenseTypeBulkEditForm(NetBoxModelBulkEditForm):
     model = LicenseType
@@ -107,19 +100,11 @@ class LicenseTypeBulkEditForm(NetBoxModelBulkEditForm):
 class LicenseBulkEditForm(NetBoxModelBulkEditForm):
     model = License
 
-    manufacturer = DynamicModelChoiceField(
-        queryset=Manufacturer.objects.all(),
-        required=False,
-        label="License Manufacturer",
-        selector=True
-    )
-
     license_type = DynamicModelChoiceField(
         queryset=LicenseType.objects.all(),
         required=False,
         label="License Type",
         selector=True,
-        query_params={"manufacturer_id": "$manufacturer"}
     )
 
     parent_license = DynamicModelChoiceField(
@@ -127,18 +112,18 @@ class LicenseBulkEditForm(NetBoxModelBulkEditForm):
         required=False,
         label="Parent License",
         selector=True,
-        query_params={"manufacturer_id": "$manufacturer"}
+        query_params={"license_type__manufacturer_id": "$license_type__manufacturer"}
     )
 
     purchase_date = forms.DateField(
         required=False,
-        widget=forms.DateInput(attrs={"type": "date"}),
+        widget=DatePicker(attrs={'is_clearable': True}),
         label="Purchase Date"
     )
 
     expiry_date = forms.DateField(
         required=False,
-        widget=forms.DateInput(attrs={"type": "date"}),
+        widget=DatePicker(attrs={'is_clearable': True}),
         label="Expiry Date"
     )
 
@@ -157,20 +142,19 @@ class LicenseBulkEditForm(NetBoxModelBulkEditForm):
 
     class Meta:
         fields = [
-            "manufacturer", "license_type", "description", "volume_limit",
+            "license_type", "description", "volume_limit",
             "parent_license", "purchase_date", "expiry_date", "comment"
         ]
-
 # ---------- Assignments ----------
 
 class LicenseAssignmentBulkEditForm(NetBoxModelBulkEditForm):
     model = LicenseAssignment
 
-    manufacturer = DynamicModelChoiceField(
-        queryset=Manufacturer.objects.all(),
+    license_type = DynamicModelChoiceField(
+        queryset=LicenseType.objects.all(),
         required=False,
-        label="License Manufacturer",
-        selector=True
+        label="License Type",
+        selector=True,
     )
 
     license = DynamicModelChoiceField(
@@ -178,7 +162,7 @@ class LicenseAssignmentBulkEditForm(NetBoxModelBulkEditForm):
         required=False,
         label="License",
         selector=True,
-        query_params={"manufacturer_id": "$manufacturer"}
+        query_params={"license__license_type__manufacturer_id": "$license_type__manufacturer"}
     )
 
     device = DynamicModelChoiceField(
@@ -211,13 +195,12 @@ class LicenseAssignmentBulkEditForm(NetBoxModelBulkEditForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        manufacturer = self.initial.get("manufacturer") or self.data.get("manufacturer")
-        if manufacturer:
-            self.fields["license"].queryset = License.objects.filter(manufacturer=manufacturer)
-
+        license_type = self.initial.get("license_type") or self.data.get("license_type")
+        if license_type:
+            self.fields["license"].queryset = License.objects.filter(license_type=license_type)
 
     class Meta:
         fields = [
-            "manufacturer", "license", "device", "virtual_machine",
+            "license_type", "license", "device", "virtual_machine",
             "volume", "description", "comment"
         ]

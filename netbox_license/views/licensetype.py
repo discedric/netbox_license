@@ -1,7 +1,8 @@
 from netbox.views import generic
 from utilities.views import register_model_view
-from ..models import LicenseType
-from .. import filtersets, tables
+from netbox_license.models.licensetype import LicenseType
+from .. import tables
+from netbox_license.filtersets.licensetypes import LicenseTypeFilterSet
 from ..forms.filtersets import LicenseTypeFilterForm
 from ..forms.models import LicenseTypeForm
 from ..forms.bulk_edit import LicenseTypeBulkEditForm
@@ -16,8 +17,6 @@ __all__ = (
     'LicenseTypeBulkImportView',
     'LicenseTypeBulkEditView',
     'LicenseTypeBulkDeleteView',
-    'LicensetypeChangeLogView',
-    'LicensetypeJournalView',
 )
 
 # -------------------- Object Views --------------------
@@ -27,29 +26,11 @@ class LicenseTypeView(generic.ObjectView):
     """View for displaying a single License Type"""
     queryset = LicenseType.objects.all()
 
-
-class LicensetypeChangeLogView(generic.ObjectChangeLogView):
-    queryset = LicenseType.objects.all()
-    model = LicenseType
-
-    def get(self, request, *args, **kwargs):
-        return super().get(request, model=self.model, *args, **kwargs)
-
-
-class LicensetypeJournalView(generic.ObjectJournalView):
-    queryset = LicenseType.objects.all()
-    model = LicenseType
-
-    def get(self, request, pk):
-        return super().get(request, pk=pk, model=self.model)
-
-
-
 @register_model_view(LicenseType, 'list', path='', detail=False)
 class LicenseTypeListView(generic.ObjectListView):
     queryset = LicenseType.objects.annotate(license_count=Count('licenses', distinct=True))
     table = tables.LicenseTypeTable
-    filterset = filtersets.LicenseTypeFilterSet
+    filterset = LicenseTypeFilterSet
     filterset_form = LicenseTypeFilterForm
 
 
@@ -77,7 +58,7 @@ class LicenseTypeBulkImportView(generic.BulkImportView):
 @register_model_view(LicenseType, 'bulk_edit', path='edit', detail=False)
 class LicenseTypeBulkEditView(generic.BulkEditView):
     queryset = LicenseType.objects.all()
-    filterset = filtersets.LicenseTypeFilterSet
+    filterset = LicenseTypeFilterSet
     table = tables.LicenseTypeTable
     form = LicenseTypeBulkEditForm
     default_return_url = 'plugins:netbox_license:licensetype_list'
