@@ -1,137 +1,137 @@
 # NetBox License Plugin – Developer Documentation
 
-## Overzicht
+## Overview
 
-De `netbox_license` plugin breidt NetBox uit met een systeem voor licentiebeheer. De plugin ondersteunt het aanmaken, bewerken, toewijzen en beheren van software- en hardwarelicenties, inclusief types, volumes, looptijden en koppelingen aan toestellen of virtuele machines.
+The `netbox_license` plugin extends NetBox with a full-featured license management system. It allows users to create, edit, assign, and manage software and hardware licenses, including license types, volume tracking, expiration handling, and assignments to devices or virtual machines.
 
-Deze documentatie is bedoeld voor ontwikkelaars die deze plugin willen begrijpen, onderhouden of uitbreiden.
-
----
-
-## Structuur van de Plugin
-
-### Top-Level Bestanden
-
-| Bestand               | Doel |
-|-----------------------|------|
-| `__init__.py`         | Markeert de directory als een Python-package. |
-| `choices.py`          | Bevat enums en keuzelijsten voor modellen en formulieren (bijv. licentietypes, volumetypes). |
-| `jobs.py`             | Definieert geplande taken of achtergrondjobs, zoals licentie-expiratierapporten. |
-| `navigation.py`       | Integreert de plugin in het NetBox-navigatiemenu. |
-| `tables.py`           | Definieert tabellen en kolomstructuren voor weergave in de UI. |
-| `template_content.py` | Voegt extra context toe aan templates via context processors. |
-| `urls.py`             | Routeert URLs naar views voor licenties, types en toewijzingen. |
-| `version.py`          | Bevat de pluginversie (voor compatibiliteitscontrole). |
+This documentation is intended for developers who want to understand, maintain, or extend the plugin.
 
 ---
 
-### Belangrijke Subfolders
+## Plugin Structure
+
+### Top-Level Files
+
+| File                | Purpose |
+|---------------------|---------|
+| `__init__.py`       | Marks the directory as a Python package. |
+| `choices.py`        | Contains enums and choice fields for models and forms (e.g., license types, volume types). |
+| `jobs.py`           | Defines scheduled or background jobs, such as license expiration checks. |
+| `navigation.py`     | Integrates the plugin into the NetBox UI menu. |
+| `tables.py`         | Defines table layouts and columns for object list views. |
+| `template_content.py` | Adds additional context to templates via context processors. |
+| `urls.py`           | Routes URLs to views for licenses, license types, and assignments. |
+| `version.py`        | Stores the plugin version for compatibility purposes. |
+
+---
+
+### Key Subfolders
 
 #### `models/`
-Bevat de datamodellen van de plugin.
+Contains the plugin's data models.
 
-- `license.py`: Definieert het `License`-model (sleutel, volume, verloopdatum, parent-child relaties).
-- `licensetype.py`: Bevat `LicenseType` (perpetual, subscription, expansion, volume types).
-- `licenseassignment.py`: Beschrijft toewijzingen van licenties aan devices of virtuele machines.
+- `license.py`: Defines the `License` model, including license key, volume, expiration, and parent-child relationships.
+- `licensetype.py`: Defines the `LicenseType` model (e.g., perpetual, subscription, expansion).
+- `licenseassignment.py`: Defines license assignments to devices or virtual machines.
 
 #### `views/`
-Django views voor webverkeer.
+Django views for handling HTTP requests.
 
-- `license.py`: CRUD voor `License`.
-- `licensetype.py`: CRUD voor `LicenseType`.
-- `licenseassignment.py`: CRUD voor `LicenseAssignment`.
+- `license.py`: CRUD views for the `License` model.
+- `licensetype.py`: CRUD views for `LicenseType`.
+- `licenseassignment.py`: CRUD views for `LicenseAssignment`.
 
 #### `forms/`
-Django formulieren.
+Django forms used in the plugin.
 
-- `bulk_edit.py`: Bulkbewerkingen op licenties.
-- `bulk_import.py`: CSV-import van licentiegegevens.
-- `filtersets.py`: Formulieren voor filtering.
-- `models.py`: Formulieren voor individuele objecten.
+- `bulk_edit.py`: Forms for bulk editing license-related objects.
+- `bulk_import.py`: Forms for CSV import.
+- `filtersets.py`: Forms for UI filtering.
+- `models.py`: Forms for creating and editing individual objects.
 
 #### `filtersets/`
-Django-filtersets voor geavanceerde filtering.
+Django FilterSets for advanced filtering.
 
-- `licenses.py`, `licensetypes.py`, `licenseassignments.py`: Filtermogelijkheden op views en API.
+- `licenses.py`, `licensetypes.py`, `licenseassignments.py`: Define filters for views and the API.
 
 #### `tables/`
-Tabelweergaves voor NetBox UI.
+Table definitions for the NetBox UI.
 
-- Definieert welke velden in tabellen getoond worden.
+- Specifies which fields are displayed and how object tables are rendered.
 
 #### `api/`
-REST API toegang.
+Exposes plugin functionality through REST API endpoints.
 
-- `serializers/`: Serializers voor alle modellen (inclusief nested representaties).
-- `views.py`: Viewsets voor CRUD via API.
-- `urls.py`: API-routes.
+- `serializers/`: Serializers for all models, including nested representations.
+- `views.py`: API viewsets for CRUD operations.
+- `urls.py`: Defines API routes.
 
 #### `graphql/`
-GraphQL API-ondersteuning.
+GraphQL support for querying license data.
 
-- `types.py`, `schema.py`, `filters.py`: Biedt toegang tot licentiegegevens via GraphQL.
+- `types.py`, `schema.py`, `filters.py`: Define the GraphQL schema, types, and filters for licenses.
 
 #### `migrations/`
-Django-migraties voor databaseopbouw.
+Django migrations for initializing and updating the database schema.
 
-- `0001_initial.py`: Eerste migratie (tabelstructuur).
-- Volgende bestanden wijzigen velden of relaties.
+- `0001_initial.py`: Creates initial database tables.
+- Additional files apply field or relationship changes.
 
 #### `management/commands/`
-Aangepaste commando’s.
+Custom Django management commands.
 
-- `check_expiring_licenses.py`: Detecteert licenties die binnenkort verlopen.
+- `check_expiring_licenses.py`: Detects licenses nearing expiration for reporting or automation purposes.
 
 #### `templates/netbox_license/`
-Jinja2-templates voor UI-weergave.
+Jinja2 templates for the plugin's web interface.
 
-- Detail-, lijst- en formulierweergaves.
-- Bevat o.a. `license.html` (detailpagina met voortgangsbalk, toewijzingen, child-licenties).
+- Includes list, detail, and form views.
+- Notably includes `license.html`, which displays license details, progress indicators, assignments, and related licenses.
 
 #### `utils/`
-Hulpfuncties voor gedeelde logica.
+Shared utility functions used throughout the plugin.
 
 ---
 
-## Hoe Alles Samenwerkt
+## Component Overview
 
-| Component | Verantwoordelijkheid |
-|----------|----------------------|
-| **Models** | Structuur van gegevens (License, LicenseType, LicenseAssignment). |
-| **Migrations** | Zet de database op en houdt schemawijzigingen bij. |
-| **Forms & Filtersets** | UI- en API-gebruikersinteractie, filtering en validatie. |
-| **Views** | Verwerken van webverkeer en koppeling naar templates. |
-| **Templates** | UI-weergave in de browser. |
-| **Tables** | Structureren van lijstweergaves. |
-| **API/GraphQL** | Toegang tot plugin via REST of GraphQL voor integraties. |
-| **Management Commands** | Automatisering van achtergrondtaken. |
-| **Navigation & template_content** | Plugin-integratie in de NetBox-interface. |
-
----
-
-## Ontwikkel- en Onderhoudstips
-
-- **Nieuwe velden toevoegen**: Update het model, maak een migratie, en pas formulieren, templates, serializers en filtersets aan.
-- **Relaties wijzigen**: Controleer afhankelijkheden in forms, views, templates, API, etc.
-- **API uitbreiden**: Pas serializers en API viewsets aan.
-- **UI aanpassen**: Wijzig templates en tabellen.
-- **Nieuwe features toevoegen**: Volg bestaande structuur – begin bij het model en werk omhoog naar views en templates.
-- **Altijd testen na wijzigingen** met `python manage.py test` en `migrate`.
+| Component                | Responsibility |
+|--------------------------|----------------|
+| Models                   | Define the structure for License, LicenseType, and LicenseAssignment. |
+| Migrations               | Create and update the database schema. |
+| Forms and Filtersets     | Provide input validation and filtering for the UI and API. |
+| Views                    | Handle HTTP requests and render templates. |
+| Templates                | Display content in the NetBox web interface. |
+| Tables                   | Format object list views. |
+| API and GraphQL          | Expose data for integration and automation. |
+| Management Commands      | Automate scheduled and background tasks. |
+| Navigation and Templates | Integrate the plugin into the NetBox UI. |
 
 ---
 
-## Installatie (voor ontwikkelaars)
+## Development and Maintenance Tips
+
+- To add new fields: update the model, create a migration, and update all relevant forms, templates, serializers, and filtersets.
+- When changing relationships: update the models and check all dependent components.
+- To extend the API: modify or create new serializers and viewsets in the `api/` module.
+- For UI changes: update Jinja2 templates and the relevant table definitions.
+- To implement new features: follow the plugin structure—start with models, then add forms, views, templates, and tests.
+- Always test changes with `python manage.py test` and apply migrations using `python manage.py migrate`.
+
+---
+
+## Installation (Developer Setup)
 
 ```bash
-# In NetBox config:
+# In NetBox configuration (configuration.py):
 PLUGINS = ['netbox_license']
 PLUGINS_CONFIG = {
   'netbox_license': {
-    # Optionele configuratie
+    # Optional plugin settings
   }
 }
 
-# Installeren:
+# Installation:
 $ git clone <plugin-url> netbox/netbox_license
 $ pip install -e .
 $ python manage.py migrate
