@@ -23,3 +23,4 @@ class LicenseAssignmentQuery:
         return LicenseAssignment.objects.get(pk=id)
 
     license_assignment_list: list[LicenseAssignmentType] = strawberry_django.field()
+

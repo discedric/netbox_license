@@ -1,5 +1,4 @@
 from django.apps import apps
-from django.db.models import Q
 
 def query_assigned_licenses(device):
     """
