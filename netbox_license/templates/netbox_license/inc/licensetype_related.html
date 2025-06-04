@@ -1,0 +1,36 @@
+{% load helpers %}
+
+<div class="card">
+  <h5 class="card-header d-flex justify-content-between align-items-center">
+    Licenses
+    <div class="card-actions">
+      <a href="{% url 'plugins:netbox_license:license_add' %}?license_type={{ object.pk }}&manufacturer={{ object.manufacturer.pk }}" class="btn btn-ghost-primary btn-sm">
+        <span class="mdi mdi-plus-thick" aria-hidden="true"></span> Add License
+      </a>
+    </div>
+  </h5>
+  <table class="table table-hover table-headings mb-0">
+    <tbody>
+      <tr>
+        <td>
+          <a href="{% url 'plugins:netbox_license:license_list' %}?license_type_id={{ object.pk }}">
+            Licenses
+          </a>
+        </td>
+        <td class="text-end">
+          <span class="badge text-bg-primary rounded-pill">{{ object.licenses.count }}</span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <a href="{% url 'plugins:netbox_license:licenseassignment_list' %}?license__license_type_id={{ object.pk }}">
+            Assignments
+          </a>
+        </td>
+        <td class="text-end">
+          <span class="badge text-bg-primary rounded-pill">{{ license_assignments }}</span>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,188 @@
+{% extends 'generic/object.html' %}
+{% load helpers %}
+{% load humanize %}
+{% load plugins %}
+
+{% block title %}
+  {{ object.license_key }}
+{% endblock %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  {% if object.license_type %}
+    <li class="breadcrumb-item">
+      <a href="{% url 'plugins:netbox_license:license_list' %}?license_type_id={{ object.license_type.pk }}">
+        {{ object.license_type }}
+      </a>
+    </li>
+  {% endif %}
+{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-md-6">
+    <div class="card">
+      <h5 class="card-header">License Details</h5>
+      <table class="table table-hover attr-table">
+        <tr>
+          <th scope="row">License Type</th>
+          <td>{{ object.license_type|linkify }}</td>
+        </tr>
+        <tr>
+          <th>License Key</th>
+          <td class="font-monospace">{{ object|linkify }}</td>
+        </tr>
+        <tr>
+          <th scope="row">Product Key</th>
+          <td class="font-monospace">{{ object.product_key|placeholder }}</td>
+        </tr>
+        <tr>
+          <th scope="row">Serial Number</th>
+          <td>{{ object.serial_number|placeholder }}</td>
+        </tr>
+        <tr>
+          <th scope="row">License Manufacturer</th>
+          <td>{{ object.license_type.manufacturer|linkify|placeholder }}</td>  <!-- ✅ -->
+        </tr>        
+        <tr>
+          <th scope="row">Volume Type</th>
+          <td>{{ object.license_type.get_volume_type_display }}</td>
+        </tr>        
+        <tr>
+          <th scope="row">Volume Limit</th>
+          <td>
+            {% if object.volume_type == 'UNLIMITED' %}
+              Unlimited
+            {% else %}
+              {{ object.volume_limit }}
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <th scope="row">Current Usage</th>
+          <td>{{ object.usage_display }}</td>
+        </tr>
+        {% if object.parent_license %}
+        <tr>
+          <th scope="row">Parent License</th>
+          <td>{{ object.parent_license|linkify }}</td>
+        </tr>
+        {% endif %}
+        {% if object.purchase_date %}
+        <tr>
+          <th scope="row">Purchase Date</th>
+          <td>{{ object.purchase_date|date:"Y-m-d" }}</td>
+        </tr>
+        {% endif %}
+
+        {% if object.expiry_date %}
+        <tr>
+          <th scope="row">Expiry Date</th>
+          <td>{{ object.expiry_date|date:"Y-m-d" }}</td>
+        </tr>
+        {% endif %}
+
+        <tr>
+          <th scope="row">Expiry Status</th>
+          <td>
+            {% include "netbox_license/inc/license_progressbar.html" with record=object %}
+          </td>
+        </tr>
+        <tr>
+          <th scope="row">Description</th>
+          <td>{{ object.description|placeholder }}</td>
+        </tr>
+      </table>
+    </div>
+
+    {% include 'inc/panels/custom_fields.html' %}
+  </div>
+
+  <div class="col-md-6">
+    <div class="card">
+      <h2 class="card-header d-flex justify-content-between align-items-center">
+        Assigned Devices ({{ object.usage_display }})
+        <div class="card-actions">
+          <a href="{% url 'plugins:netbox_license:licenseassignment_add' %}?license={{ object.id }}&manufacturer={{ object.license_type.manufacturer.id }}" class="btn btn-ghost-primary btn-sm">
+            <span class="mdi mdi-plus-thick" aria-hidden="true"></span> Add Assignment
+          </a>
+        </div>
+      </h2>
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Device</th>
+            <th>Device Manufacturer</th>
+            <th>Assigned On</th>
+            <th>Volume</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for assignment in object.assignments.all %}
+          <tr>
+            <td>{{ assignment.device|linkify|placeholder }}</td>
+            <td>{{ assignment.device_manufacturer|linkify|placeholder }}</td>
+            <td>{{ assignment.assigned_to|date:"Y-m-d" }}</td>
+            <td>{{ assignment.volume }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="4" class="text-muted">No assignments found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if object.license_type.license_model != 'expansion' %}
+    <div class="card mt-3">
+      <h2 class="card-header d-flex justify-content-between align-items-center">
+        Child Licenses
+        <div class="card-actions">
+          <a href="{% url 'plugins:netbox_license:license_add' %}?parent_license={{ object.pk }}&manufacturer={{ object.license_type.manufacturer.pk }}" class="btn btn-ghost-primary btn-sm">
+            <span class="mdi mdi-plus-thick" aria-hidden="true"></span> Add Child License
+          </a>
+        </div>
+      </h2>
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>License Key</th>
+            <th>License Type</th>
+            <th>Volume</th>
+            <th>Expiry Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for child in object.sub_licenses.all %}
+          <tr>
+            <td>{{ child|linkify }}</td>
+            <td>{{ child.license_type|linkify|placeholder }}</td>
+            <td>
+              {% if child.license_type.volume_type == 'unlimited' %}
+                Unlimited
+              {% else %}
+                {{ child.volume_limit|placeholder }}
+              {% endif %}
+            </td>
+            <td>{{ child.expiry_date|date:"Y-m-d"|placeholder }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="4" class="text-muted">No child licenses found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    {% include 'inc/panels/tags.html' %}
+    {% include 'inc/panels/comments.html' %}
+  </div>
+</div>
+<div class="row mb-3">
+  <div class="col col-md-12">
+    {% plugin_full_width_page object %}
+  </div>
+</div>
+{% endblock %}

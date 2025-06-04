@@ -1,0 +1,126 @@
+{% extends 'generic/object.html' %}
+{% load helpers %}
+{% load humanize %}
+{% load plugins %}
+
+{% block title %}
+  {{ object.name }}
+{% endblock %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item">
+    <a href="{% url 'plugins:netbox_license:licensetype_list' %}?manufacturer_id={{ object.manufacturer.pk }}">
+      {{ object.manufacturer }}
+    </a>
+  </li>
+  
+{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+  <div class="col-md-6">
+    <div class="card">
+      <h5 class="card-header">License Type Details</h5>
+      <table class="table table-hover attr-table">
+        <tr>
+          <th scope="row">Name</th>
+          <td>{{ object.name|placeholder }}</td>
+        </tr>
+        <tr>
+          <th scope="row">Slug</th>
+          <td>{{ object.slug }}</td>
+        </tr>
+        <tr>
+          <th scope="row">Manufacturer</th>
+          <td>{{ object.manufacturer|linkify|placeholder }}</td>
+        </tr>
+        <tr>
+          <th scope="row">Product Code</th>
+          <td>{{ object.product_code|placeholder }}</td>
+        </tr>
+        <tr>
+          <th scope="row">EAN Code</th>
+          <td>{{ object.ean_code|placeholder }}</td>
+        </tr>
+        <tr>
+          <th scope="row">Volume Type</th>
+          <td>{{ object.get_volume_type_display }}</td>
+        </tr>
+        {% if object.volume_relation %}
+        <tr>
+          <th scope="row">Volume Relation</th>
+          <td>{{ object.get_volume_relation_display }}</td>
+        </tr>
+        {% endif %}
+        <tr>
+          <th scope="row">License Model</th>
+          <td>{{ object.get_license_model_display }}</td>
+        </tr>
+        {% if object.base_license %}
+        <tr>
+          <th scope="row">Base License</th>
+          <td>{{ object.base_license|linkify }}</td>
+        </tr>
+        {% endif %}
+        <tr>
+          <th scope="row">Purchase Model</th>
+          <td>{{ object.get_purchase_model_display|default:"N/A" }}</td>
+        </tr>
+        <tr>
+          <th scope="row">Description</th>
+          <td>{{ object.description|placeholder }}</td>
+        </tr>
+      </table>
+    </div>
+
+    {% include 'inc/panels/custom_fields.html' %}
+    
+    {% include 'inc/panels/comments.html' %}
+    {% include 'inc/panels/tags.html' %}
+    {% plugin_left_page object %}
+  </div>
+  <div class="col-md-6">
+    <div class="card">
+      <h2 class="card-header d-flex justify-content-between align-items-center">
+        Expansion Types ({{ object.expansions.count }})
+        <div class="card-actions">
+            <a href="{% url 'plugins:netbox_license:licensetype_add' %}?license_model=expansion&base_license={{ object.pk }}" class="btn btn-ghost-primary btn-sm">
+            <span class="mdi mdi-plus-thick" aria-hidden="true"></span> Add Expansion Type
+          </a>
+        </div>
+      </h2>
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Manufacturer</th>
+            <th>License Model</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for expansion in object.expansions.all %}
+          <tr>
+            <td>{{ expansion|linkify }}</td>
+            <td>{{ expansion.manufacturer|linkify|placeholder }}</td>
+            <td>{{ expansion.get_license_model_display }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="3" class="text-muted">No expansion licenses found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  
+
+    {% plugin_right_page object %}
+  </div>
+</div>
+<div class="row mb-3">
+  <div class="col col-md-12">
+    {% plugin_full_width_page object %}
+  </div>
+</div>
+{% endblock %}

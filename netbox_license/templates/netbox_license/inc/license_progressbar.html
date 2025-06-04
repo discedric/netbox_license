@@ -1,0 +1,31 @@
+{% with record.get_expiry_progress as wp %}
+{% if wp %}
+  <div class="progress position-relative" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ wp.percent }}">
+    {% if wp.color == "success" %}
+      <div class="progress-bar bg-success" style="width: {{ wp.percent }}%;"></div>
+    {% elif wp.color == "info" %}
+      <div class="progress-bar bg-info" style="width: {{ wp.percent }}%;"></div>
+    {% elif wp.color == "warning" %}
+      <div class="progress-bar bg-warning" style="width: {{ wp.percent }}%;"></div>
+    {% else %}
+      <div class="progress-bar bg-danger" style="width: {{ wp.percent }}%;"></div>
+    {% endif %}
+    {% if wp.expired %}
+      <span class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center text-white fw-bold">
+        Expired {{ record.expiry_date|timesince|split:','|first }} ago
+      </span>
+    {% else %}
+      <span class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center text-white fw-bold">
+        {{ record.expiry_date|timeuntil|split:','|first }} left
+      </span>
+    {% endif %}
+  </div>
+{% else %}
+<div class="progress position-relative" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
+  <div class="progress-bar bg-info" style="width: 100%;">
+    <span class="text-white fw-bold">&#8734;</span>
+  </div>
+</div>
+
+{% endif %}
+{% endwith %}

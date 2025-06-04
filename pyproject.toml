@@ -3,10 +3,10 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "license_management"
+name = "netbox_license"
 version = "0.1.0"
 authors = [
-  { name="Cedric Vaneessen", email="cedric.vaneessen@zabun.be" },
+  { name="Kobe Naessens", email="kobenaessens04@gmail.com" },
 ]
 description = "Inventory License management in NetBox"
 readme = "README.md"
@@ -22,4 +22,4 @@ keywords = ["netbox", "netbox-plugin", "License"]
 include-package-data = true
 
 [tool.setuptools.packages.find]
-include = ["license_management*"]
+include = ["netbox_license*"]
