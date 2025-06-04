@@ -1,9 +1,11 @@
-from .schema import(
+from .schema import (
+    LicenseTypeQuery,
     LicenseQuery,
     LicenseAssignmentQuery,
 )
 
-schema=[
+schema = [
+    LicenseTypeQuery,
     LicenseQuery,
     LicenseAssignmentQuery,
 ]

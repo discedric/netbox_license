@@ -1,10 +1,10 @@
 from django.db import models
 from netbox.models import NetBoxModel
-from django.utils.timezone import now
 from django.urls import reverse
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from datetime import date
+from django.utils import timezone
 from netbox_license.models.licensetype import LicenseType
 from taggit.managers import TaggableManager
 from ..choices import AssignmentKindChoices
@@ -33,6 +33,8 @@ class License(NetBoxModel):
         related_name="sub_licenses",
         help_text="Link to parent license for extensions."
     )
+    status = models.CharField(max_length=20, default="unknown")
+
     tags = TaggableManager(related_name="lm_license_tags")
 
     def clean(self):
@@ -67,6 +69,8 @@ class License(NetBoxModel):
         if self.purchase_date and self.expiry_date:
             if self.expiry_date < self.purchase_date:
                 raise ValidationError(_("Expiry date cannot be earlier than purchase date."))
+            
+        self.status = self.compute_status()
 
     def current_usage(self):
         assigned = self.assignments.aggregate(models.Sum('volume'))['volume__sum'] or 0
@@ -78,7 +82,19 @@ class License(NetBoxModel):
             return f"{self.current_usage()}/∞"
         return f"{self.current_usage()}/{self.volume_limit}"
     
-    
+    def compute_status(self) -> str:
+        if not self.expiry_date:
+            return "unknown"
+
+        delta = (self.expiry_date - timezone.now().date()).days
+        if delta < 0:
+            return "expired"
+        elif delta < 30:
+            return "critical"
+        elif delta < 90:
+            return "warning"
+        return "good"
+        
 
     @property
     def is_parent_license(self):
@@ -88,6 +104,8 @@ class License(NetBoxModel):
     def is_child_license(self):
         return self.parent_license is not None
     
+
+
     @property
     def usage_kinds(self):
         kinds = set(a.kind for a in self.assignments.all())
@@ -167,6 +185,7 @@ class License(NetBoxModel):
             return max(0, min(percent, 100))
         except ZeroDivisionError:
             return 100
+    
     
     class Meta:
         verbose_name = "Licenses"
