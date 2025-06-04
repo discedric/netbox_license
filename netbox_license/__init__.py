@@ -22,5 +22,6 @@ class LicenseManagementConfig(PluginConfig):
     def ready(self):
         super().ready()
         from . import  events
+        from . import jobs
 
 config = LicenseManagementConfig

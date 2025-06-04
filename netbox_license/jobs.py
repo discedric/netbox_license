@@ -1,16 +1,15 @@
-from extras.jobs import Job
+from netbox.jobs import JobRunner, system_job
+from core.choices import JobIntervalChoices
 from netbox_license.models.license import License
-from netbox_license.notifications import send_slack_notification
 
-class LicenseStatusCheckJob(Job):
-    name = "License Status Checker"
+@system_job(interval=JobIntervalChoices.INTERVAL_DAILY) 
+class LicenseStatusCheckJob(JobRunner):
+    class Meta:
+        name = "License Status Checker"
 
-    def run(self):
+    def run(self, *args, **kwargs):
         for license in License.objects.all():
-            old_status = license.status
             new_status = license.compute_status()
-
-            if old_status != new_status:
+            if license.status != new_status:
                 license.status = new_status
                 license.save()
-                send_slack_notification(license, old_status, new_status)
