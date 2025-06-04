@@ -154,37 +154,37 @@ class License(NetBoxModel):
             }
 
         return None
-
+# calculate time passed
     @property
     def expiry_elapsed(self):
         return date.today() - self.purchase_date if self.purchase_date else None
-
+#calculate the time remaining of date.today
     @property
     def expiry_remaining(self):
         if self.expiry_date:
             return self.expiry_date - date.today()
         return None
-
+#calculate the total time of the license
     @property
     def expiry_total(self):
         if self.purchase_date and self.expiry_date:
             return self.expiry_date - self.purchase_date
         return None
-
-    @property
-    def expiry_progress(self):
-        if not self.expiry_date:
-            return None
-        if not self.purchase_date:
-            days_left = (self.expiry_date - date.today()).days
-            return 10 if days_left > 0 else 100
-        try:
-            percent = int(100 * (self.expiry_elapsed / self.expiry_total))
-            if percent < 10 and self.expiry_remaining.days > 0:
-                percent = 10
-            return max(0, min(percent, 100))
-        except ZeroDivisionError:
-            return 100
+# Old code for expiry_progress, kept for reference
+    # @property
+    # def expiry_progress(self):
+    #     if not self.expiry_date:
+    #         return None
+    #     if not self.purchase_date:
+    #         days_left = (self.expiry_date - date.today()).days
+    #         return 10 if days_left > 0 else 100
+    #     try:
+    #         percent = int(100 * (self.expiry_elapsed / self.expiry_total))
+    #         if percent < 10 and self.expiry_remaining.days > 0:
+    #             percent = 10
+    #         return max(0, min(percent, 100))
+    #     except ZeroDivisionError:
+    #         return 100
     
     
     class Meta:
