@@ -3,6 +3,6 @@ from netbox.events import EventType, EVENT_TYPE_KIND_WARNING
 
 EventType(
     name='netbox_license.expirystatus',
-    text=_('License Status'),
+    text=_('License Expiry Status'),
     kind=EVENT_TYPE_KIND_WARNING,
 ).register()
