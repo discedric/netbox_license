@@ -121,7 +121,7 @@
           <tr>
             <td>{{ assignment.device|linkify|placeholder }}</td>
             <td>{{ assignment.device_manufacturer|linkify|placeholder }}</td>
-            <td>{{ assignment.assigned_to|date:"Y-m-d" }}</td>
+            <td>{{ assignment.assigned_on|date:"Y-m-d" }}</td>
             <td>{{ assignment.volume }}</td>
           </tr>
           {% empty %}

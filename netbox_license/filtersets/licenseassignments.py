@@ -79,7 +79,7 @@ class LicenseAssignmentFilterSet(NetBoxModelFilterSet):
         label="Cluster"
     )
 
-    assigned_to = django_filters.DateFromToRangeFilter(
+    assigned_on = django_filters.DateFromToRangeFilter(
         label="Assigned Date (Between)"
     )
     volume = django_filters.NumberFilter(
@@ -94,7 +94,7 @@ class LicenseAssignmentFilterSet(NetBoxModelFilterSet):
             "virtual_machine",
             "license__license_type__manufacturer",
             "device_manufacturer_id",
-            "assigned_to",
+            "assigned_on",
             "volume",
             "kind",
         ]

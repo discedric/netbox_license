@@ -226,7 +226,7 @@ class LicenseAssignmentFilterForm(NetBoxModelFilterSetForm):
         FieldSet('q', name='Search'),
         FieldSet('manufacturer_id', 'license', 'license__license_type_id', name='License Info'),
         FieldSet('kind','device_manufacturer_id', 'device_id', 'device_type_id', 'virtual_machine_id', 'virtual_machine__cluster_id', name='Assignment Target'),
-        FieldSet('assigned_to__gte', 'assigned_to__lte', 'volume', name='Assignment Details'),
+        FieldSet('assigned_on__gte', 'assigned_on__lte', 'volume', name='Assignment Details'),
         FieldSet('comments', name='Metadata'),
     )
 
@@ -287,13 +287,13 @@ class LicenseAssignmentFilterForm(NetBoxModelFilterSetForm):
         label="Cluster"
     )
 
-    assigned_to__gte = forms.DateField(
+    assigned_on__gte = forms.DateField(
         required=False,
         label="Assigned Date (After)",
         widget=forms.DateInput(attrs={"type": "date"})
     )
 
-    assigned_to__lte = forms.DateField(
+    assigned_on__lte = forms.DateField(
         required=False,
         label="Assigned Date (Before)",
         widget=forms.DateInput(attrs={"type": "date"})

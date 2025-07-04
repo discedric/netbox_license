@@ -77,7 +77,7 @@ class Migration(migrations.Migration):
                 ('last_updated', models.DateTimeField(auto_now=True, null=True)),
                 ('custom_field_data', models.JSONField(blank=True, default=dict, encoder=utilities.json.CustomFieldJSONEncoder)),
                 ('volume', models.PositiveIntegerField(default=1)),
-                ('assigned_to', models.DateTimeField(default=django.utils.timezone.now)),
+                ('assigned_on', models.DateTimeField(default=django.utils.timezone.now)),
                 ('description', models.CharField(blank=True, max_length=255, null=True)),
                 ('comments', models.TextField(blank=True, null=True)),
                 ('device', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='license_assignments', to='dcim.device')),
