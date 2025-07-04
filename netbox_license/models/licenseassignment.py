@@ -28,7 +28,7 @@ class LicenseAssignment(NetBoxModel):
         default=1,
         help_text="Quantity of license allocated. Only relevant for Volume Licenses."
     )
-    assigned_to = models.DateTimeField(default=now)
+    assigned_on = models.DateTimeField(default=now)
     description = models.CharField(max_length=255, blank=True, null=True)
     comments = models.TextField(blank=True, null=True)
 

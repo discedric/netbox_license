@@ -215,7 +215,7 @@ class LicenseAssignmentTable(NetBoxTable):
         verbose_name="Volume Relation",
         order_by="license__license_type__volume_relation"
     )
-    assigned_to = tables.Column(verbose_name="Assigned On")
+    assigned_on = tables.Column(verbose_name="Assigned On")
     description = tables.Column(verbose_name="Description")
 
     class Meta(NetBoxTable.Meta):
@@ -224,7 +224,7 @@ class LicenseAssignmentTable(NetBoxTable):
             "license_key", "license_type", "manufacturer",
             "device", "device_type", "device_manufacturer",
             "virtual_machine", "volume", "volume_relation",
-            "assigned_to", "description"
+            "assigned_on", "description"
         )
         default_columns = (
             "license", "device", "virtual_machine", "volume",
