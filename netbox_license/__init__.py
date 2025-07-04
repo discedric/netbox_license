@@ -18,7 +18,8 @@ class NetboxLicenseConfig(PluginConfig):
 
     def ready(self):
         super().ready()
-        from . import  events
+        from . import events
+        from . import signals
         from . import jobs
 
 config = NetboxLicenseConfig
