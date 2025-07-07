@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "netbox_license"
-version = "2.3.0"
+version = "2.3.1"
 authors = [
   { name="Kobe Naessens", email="kobenaessens04@gmail.com" },
 ]
